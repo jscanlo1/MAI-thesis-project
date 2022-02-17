@@ -162,6 +162,8 @@ if __name__ == '__main__':
 
     dataset_type = 'AAAI'
 
+    num_labels = 2
+
     #Read in data and load it
     #(train_set, dev_set, test_set), vocab = dataset.load_data(args.input_max_length)
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)

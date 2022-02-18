@@ -19,6 +19,9 @@ from transformers import BertForSequenceClassification
 import torch.nn as nn
 import torch.optim as optim
 
+#Import some libraries for calculating metrics
+from sklearn.metrics import f1_score,precision_score,accuracy_score
+
 
 #from nltk.corpus import stopwords
 #from sklearn.preprocessing import LabelEncoder
@@ -106,6 +109,8 @@ class Trainer(object):
     def eval(self, data_loader):
         self.model.eval()
         loss_array = []
+        pred_flat_array = []
+        labels_flat_array = []
 
         size = len(data_loader.dataset)
         num_batches = len(data_loader)
@@ -133,9 +138,21 @@ class Trainer(object):
 
                 correct += np.sum(pred_flat == labels_flat)
 
+                pred_flat_array.append(pred_flat)
+                labels_flat_array.append(labels_flat)
+
                 
 
                 #loss_array.append(loss.item())
+        labels_flat_array = np.concatenate(labels_flat_array)
+        pred_flat_array = np.concatenate(pred_flat_array)
+
+        print("Labels: ", labels_flat_array[0])
+        print("Preds: ", pred_flat_array[0])
+
+        f1 = f1_score(labels_flat_array,pred_flat_array, average='weighted')
+        acc = accuracy_score(labels_flat_array,pred_flat_array)
+        prec = precision_score(labels_flat_array,pred_flat_array, average='weighted')
 
 
         #loss = np.mean(loss_array)
@@ -149,7 +166,7 @@ class Trainer(object):
         test_accuracy = (100*correct)
         #print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
-        return test_loss, test_accuracy 
+        return test_loss, acc, prec, f1
 
 
     def save(self, path):
@@ -179,6 +196,7 @@ if __name__ == '__main__':
     dataset_type = 'AAAI'
 
     num_labels = 2
+
     print(torch.version.cuda)
     print(torch.cuda.current_device())
 
@@ -194,7 +212,7 @@ if __name__ == '__main__':
     #(train_set, dev_set, test_set), vocab = dataset.load_data(args.input_max_length)
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
+    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
     val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
 
@@ -257,15 +275,15 @@ if __name__ == '__main__':
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loss = trainer.train(train_dataloader)
-        print("Epoch: {} Train Loss: {:.8f} ".format(t+1, train_loss))
-        dev_loss, dev_acc = trainer.eval(val_dataloader)
-        print("Epoch: {} Dev Loss: {:.8f} Dev Acc: {:.1f}".format(t+1, dev_loss, dev_acc))
+        print("Epoch: {}     Train Loss: {:.8f} ".format(t+1, train_loss))
+        dev_loss, dev_acc, dev_prec, dev_F1 = trainer.eval(val_dataloader)
+        print("Epoch: {}     Dev Loss: {:.8f}     Dev Acc: {:.4f}     Dev Prec {:.4f}     Dev F1 {:.4f}".format(t+1, dev_loss, dev_acc, dev_prec, dev_F1))
         
         print("---------------------------------")
 
     #test_loss, test_f1 = trainer.eval(test_loader)
-    test_loss, test_acc= trainer.eval(test_dataloader)
-    print("Test Loss: {:.4f} Test Acc: {:.1f}".format(test_loss, test_acc))
+    test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
+    print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
 
 
     #Save models

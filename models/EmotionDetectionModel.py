@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 from transformers import BertModel
 
-class FakeNewsModel(nn.Module):
+class EmotionDetectionModel(nn.Module):
     def __init__(self):
-        super(FakeNewsModel, self).__init__()
+        super(EmotionDetectionModel, self).__init__()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
 
         self.label_output_layer = nn.Sequential(

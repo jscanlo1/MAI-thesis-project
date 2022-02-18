@@ -23,7 +23,8 @@ import torch.optim as optim
 #from nltk.corpus import stopwords
 #from sklearn.preprocessing import LabelEncoder
 
-from models.FakeNewsModel import FakeNewsModel, EmotionDetectionModel
+from models.FakeNewsModel import FakeNewsModel
+from models.EmotionDetectionModel import EmotionDetectionModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
@@ -40,6 +41,7 @@ class Trainer(object):
 
         
         # self.multi_loss = MultiTaskLoss(2).cuda()
+
         param_optimizer = list(model.named_parameters())
         no_decay = ['bias', 'gamma', 'beta']
         optimizer_grouped_parameters = [
@@ -67,6 +69,11 @@ class Trainer(object):
         loss_array = []
 
         for batch, (train_features, train_mask , train_token_type_ids, truth_label) in enumerate(data_loader):
+            train_features = train_features.to(device)
+            train_mask = train_mask.to(device)
+            train_token_type_ids = train_token_type_ids.to(device)
+            truth_label = truth_label.to(device)
+
             
             # Compute prediction and loss
             #This model uses a pretrained classification so some changes mayu be necessary
@@ -106,6 +113,10 @@ class Trainer(object):
 
         with torch.no_grad():
             for train_features, train_mask , train_token_type_ids, truth_label in data_loader:
+                train_features = train_features.to(device)
+                train_mask = train_mask.to(device)
+                train_token_type_ids = train_token_type_ids.to(device)
+                truth_label = truth_label.to(device)
 
 
                 truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
@@ -113,12 +124,12 @@ class Trainer(object):
                 
                 test_loss += truth_output.loss.item()
 
-                #logits = truth_output.logits.detach().cpu().numpy()
-                logits = truth_output.logits.detach().numpy()
+                logits = truth_output.logits.detach().cpu().numpy()
+                #logits = truth_output.logits.detach().numpy()
 
                 pred_flat = np.argmax(logits, axis=1).flatten()
-                #labels_flat = truth_label.to('cpu').numpy()
-                labels_flat = truth_label.numpy().flatten()
+                labels_flat = truth_label.to('cpu').numpy()
+                #labels_flat = truth_label.numpy().flatten()
 
                 correct += np.sum(pred_flat == labels_flat)
 
@@ -128,12 +139,15 @@ class Trainer(object):
 
 
         #loss = np.mean(loss_array)
-
+        print('Correct: ', correct)
         test_loss /= num_batches
         correct /= size
 
+        print('Size: ', size)
+        #print('Correct: ', correct)
+
         test_accuracy = (100*correct)
-        print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+        #print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
         return test_loss, test_accuracy 
 
@@ -154,13 +168,26 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
+    '''
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset', type=string, default='AAAI')
     #parser.add_argument('--dataset', type=string, default='AAAI')
     args = parser.parse_args()
+    '''
 
 
     dataset_type = 'AAAI'
+
+    num_labels = 2
+    print(torch.version.cuda)
+    print(torch.cuda.current_device())
+
+    torch.cuda.device(1)
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f'Using {device} device')
+
+
 
     #Read in data and load it
     #(train_set, dev_set, test_set), vocab = dataset.load_data(args.input_max_length)
@@ -203,6 +230,7 @@ if __name__ == '__main__':
 
 
     #Set up emotion model
+    '''
     emotion_model_path = 'saved_models/emotion_model.pt'
     EmotionModel = EmotionDetectionModel()
     EmotionModel.load_state_dict(torch.load(emotion_model_path))
@@ -210,9 +238,9 @@ if __name__ == '__main__':
 
     model = FakeNewsModel(EmotionModel)
 
+    '''
 
-
-    #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2)
+    model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2).to(device)
 
     print(model)
 
@@ -228,9 +256,9 @@ if __name__ == '__main__':
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loss = trainer.train(train_dataloader)
-        print("Epoch: {} Train Loss: {:.4f} ".format(t, train_loss))
+        print("Epoch: {} Train Loss: {:.8f} ".format(t+1, train_loss))
         dev_loss, dev_acc = trainer.eval(val_dataloader)
-        print("Epoch: {} Dev Loss: {:.4f} Dev Acc: {:.1f}".format(t, dev_loss, dev_acc))
+        print("Epoch: {} Dev Loss: {:.8f} Dev Acc: {:.1f}".format(t+1, dev_loss, dev_acc))
         
         print("---------------------------------")
 

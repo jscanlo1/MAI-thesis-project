@@ -8,6 +8,7 @@ import argparse
 import numpy as np
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 import itertools
 
@@ -148,8 +149,8 @@ class Trainer(object):
         labels_flat_array = np.concatenate(labels_flat_array)
         pred_flat_array = np.concatenate(pred_flat_array)
 
-        print("Labels: ", labels_flat_array[0])
-        print("Preds: ", pred_flat_array[0])
+        #print("Labels: ", labels_flat_array[0])
+        #print("Preds: ", pred_flat_array[0])
 
         f1 = f1_score(labels_flat_array,pred_flat_array, average='weighted')
         acc = accuracy_score(labels_flat_array,pred_flat_array)
@@ -157,11 +158,11 @@ class Trainer(object):
 
 
         #loss = np.mean(loss_array)
-        print('Correct: ', correct)
+        #print('Correct: ', correct)
         test_loss /= num_batches
         correct /= size
 
-        print('Size: ', size)
+        #print('Size: ', size)
         #print('Correct: ', correct)
 
         test_accuracy = (100*correct)
@@ -194,9 +195,9 @@ if __name__ == '__main__':
     '''
 
 
-    dataset_type = 'LIAR'
+    dataset_type = 'AAAI'
 
-    num_labels = 2
+    writer = SummaryWriter()
 
     print(torch.version.cuda)
     print(torch.cuda.current_device())
@@ -264,8 +265,9 @@ if __name__ == '__main__':
 
     '''
 
-    model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
+    #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
 
+    model = EmotionDetectionModel(num_labels=num_labels).to(device)
     print(model)
 
 
@@ -283,8 +285,14 @@ if __name__ == '__main__':
         print("Epoch: {}     Train Loss: {:.8f} ".format(t+1, train_loss))
         dev_loss, dev_acc, dev_prec, dev_F1 = trainer.eval(val_dataloader)
         print("Epoch: {}     Dev Loss: {:.8f}     Dev Acc: {:.4f}     Dev Prec {:.4f}     Dev F1 {:.4f}".format(t+1, dev_loss, dev_acc, dev_prec, dev_F1))
+
+        writer.add_scalars('Training Vs validation Loss',{'Training':train_loss, 'Validation': dev_loss, }, t+1)
         
         print("---------------------------------")
+    
+    print('Finished Training')
+
+    writer.flush()
 
     #test_loss, test_f1 = trainer.eval(test_loader)
     test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)

@@ -103,6 +103,7 @@ class Trainer(object):
         loss = np.mean(loss_array)
         return loss
         
+    
 
         
 

@@ -7,14 +7,14 @@ from transformers import BertModel
 
 
 class FakeNewsModel(nn.Module):
-    def __init__(self,EmotionModel):
+    def __init__(self,num_labels, EmotionModel):
         super(FakeNewsModel, self).__init__()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
         self.EmotionModel = EmotionModel
 
         self.label_output_layer = nn.Sequential(
             nn.Dropout(0.4),
-            nn.Linear(768, 2)
+            nn.Linear(768, num_labels)
         )
 
     def forward(self, x,mask):

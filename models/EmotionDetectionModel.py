@@ -3,13 +3,13 @@ import torch.nn as nn
 from transformers import BertModel
 
 class EmotionDetectionModel(nn.Module):
-    def __init__(self):
+    def __init__(self,num_labels):
         super(EmotionDetectionModel, self).__init__()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
 
         self.label_output_layer = nn.Sequential(
             nn.Dropout(0.4),
-            nn.Linear(768, 2)
+            nn.Linear(768, num_labels)
         )
 
     def forward(self, x):

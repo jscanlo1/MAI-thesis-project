@@ -193,14 +193,14 @@ if __name__ == '__main__':
     '''
 
 
-    dataset_type = 'AAAI'
+    dataset_type = 'LIAR'
 
     num_labels = 2
 
     print(torch.version.cuda)
-    print(torch.cuda.current_device())
+    #print(torch.cuda.current_device())
 
-    torch.cuda.device(1)
+    #torch.cuda.device(1)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using {device} device')
@@ -212,19 +212,22 @@ if __name__ == '__main__':
     #(train_set, dev_set, test_set), vocab = dataset.load_data(args.input_max_length)
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
+    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
     val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
 
+    num_labels = vocab.num_labels()
 
+    print(num_labels)
 
 
     #Test that data is read in correctly
 
     
-    '''
+    
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
+    '''
     train_features, train_mask , train_token_type_ids,train_labels = next(itertools.islice(train_dataloader, 0, None))
     print(f"Feature batch shape: {train_features.size()}")
     print(f'Feature mask shape: {train_mask.size()}' )
@@ -240,10 +243,11 @@ if __name__ == '__main__':
     print('Mask: ', mask)
     print('Token Type IDs: ', token_type_ids)
     print(f"Label: {label}")
+    
+
+
+    exit()
     '''
-
-
-    #exit()
 
     #Create Full fake news model
 
@@ -259,7 +263,7 @@ if __name__ == '__main__':
 
     '''
 
-    model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=2).to(device)
+    model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
 
     print(model)
 

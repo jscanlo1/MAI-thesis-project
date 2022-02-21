@@ -11,13 +11,16 @@ class EmotionDetectionModel(nn.Module):
             nn.Dropout(0.4),
             nn.Linear(768, num_labels)
         )
+        self.softmax = nn.Softmax(dim=1)
 
-    def forward(self, x):
+    def forward(self, text_input,token_type_ids,attention_mask):
 
         
 
-        bert_output, _ = self.bert(x)
+        bert_output, _ = self.bert(text_input)
         #bert_outputs = torch.cat(bert_outputs, dim=1)
         label_output = self.label_output_layer(bert_output)
+
+        #output = torch.softmax(label_output)
         
         return label_output

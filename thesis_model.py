@@ -64,6 +64,27 @@ class Trainer(object):
                      warmup=.1)
         '''
 
+
+
+        bert_params = set(self.model.bert.parameters())
+        other_params = list(set(self.model.parameters()) - bert_params)
+
+        no_decay = ['bias', 'LayerNorm.weight']
+
+        #Include Paramters for Loss [possibly e.g. multiLoss]
+
+        optimizer_grouped_parameters = [
+            {'params': [p for n, p in model.bert.named_parameters() if not any(nd in n for nd in no_decay)],
+            'lr': bert_lr,
+            'weight_decay': 0.01},
+            {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
+            'lr': bert_lr,
+            'weight_decay_rate': 0.0},
+            {'params': other_params,
+            'lr': lr,
+            'weight_decay': weight_decay},
+        ]
+
         self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=lr, weight_decay=weight_decay)
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
 
@@ -84,13 +105,21 @@ class Trainer(object):
             
             # Compute prediction and loss
             #This model uses a pretrained classification so some changes mayu be necessary
-            truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
+            #truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
             
+            truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask)
+
+
             #print("Prediction: ", truth_output)
             #print("Actual: ", truth_label)
-            loss = truth_output.loss
-            #print("Loss Item: ",loss.item())
             
+            
+            #loss = truth_output.loss
+            #print("Loss Item: ",loss.item())
+
+            loss = self.label_criterion(truth_output,truth_label)
+            
+
             #loss = self.label_criterion(truth_output, truth_label)
 
             # Backpropagation

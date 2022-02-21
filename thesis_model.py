@@ -198,9 +198,9 @@ if __name__ == '__main__':
     num_labels = 2
 
     print(torch.version.cuda)
-    #print(torch.cuda.current_device())
+    print(torch.cuda.current_device())
 
-    #torch.cuda.device(1)
+    torch.cuda.device(1)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using {device} device')

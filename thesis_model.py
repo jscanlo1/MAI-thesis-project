@@ -1,5 +1,6 @@
 
 import os
+import random
 import string
 from turtle import shape
 import torch
@@ -65,7 +66,30 @@ class Trainer(object):
                      warmup=.1)
         '''
 
+        '''
+        #Params for straightfoward bert models
+        bert_params = set(self.model.bert.parameters())
+        other_params = list(set(self.model.parameters()) - bert_params)
+        '''
 
+
+
+        # Set up params for thesis model
+        # Must include provisions for frozen emotion detection model
+
+        #self.model.EmotionModel.parameters().requires_grad = False
+        #self.model.EmotionModel.bias.requires_grad = False
+        '''
+
+        for param in self.model.EmotionModel.parameters():
+            param.requires_grad = False
+
+        bert_params = set(self.model.bert.parameters())
+        emotion_params = set(self.model.EmotionModel.parameters())
+        other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
+        '''
+ 
+        
 
         bert_params = set(self.model.bert.parameters())
         other_params = list(set(self.model.parameters()) - bert_params)
@@ -257,6 +281,13 @@ if __name__ == '__main__':
     #print(torch.version.cuda)
     #print(torch.cuda.current_device())
 
+    seed = 123
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+
+
     torch.cuda.device(1)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -310,16 +341,17 @@ if __name__ == '__main__':
     #Create Full fake news model
 
 
-    #Set up emotion model
     '''
+    #Set up emotion model
+    
     emotion_model_path = 'saved_models/emotion_model.pt'
-    EmotionModel = EmotionDetectionModel()
+    EmotionModel = EmotionDetectionModel(num_labels=7).to(device)
     EmotionModel.load_state_dict(torch.load(emotion_model_path))
     EmotionModel.eval()
 
-    model = FakeNewsModel(EmotionModel)
-
+    model = FakeNewsModel(num_labels,EmotionModel).to(device)
     '''
+    
 
     #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
 
@@ -356,7 +388,7 @@ if __name__ == '__main__':
 
 
     #Save models
-    save_path = 'saved_models/prelim_model.pt'
+    save_path = 'saved_models/thesis_model_with_emotion.pt'
 
     trainer.save(save_path)
 

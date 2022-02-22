@@ -128,9 +128,9 @@ def load_data(input_max, dataset_type):
     elif dataset_type == 'MELD':
         vocab = Vocabulary_MELD()
         
-        train_path = 'data\MELD_Dyadic_dataset\test_sent_emo_dya.csv'
-        val_path = 'data\MELD_Dyadic_dataset\dev_sent_emo_dya.csv'
-        test_path = 'data\MELD_Dyadic_dataset\test_sent_emo_dya.csv'
+        train_path = 'data/MELD_Dyadic_dataset/test_sent_emo_dya.csv'
+        val_path = 'data/MELD_Dyadic_dataset/dev_sent_emo_dya.csv'
+        test_path = 'data/MELD_Dyadic_dataset/test_sent_emo_dya.csv'
 
     else:
         vocab = Vocabulary_AAAI()
@@ -172,7 +172,7 @@ def load_data(input_max, dataset_type):
             for i, item in data.iterrows():
                 text_item = {"text": item["Utterance"],
                             "label": item["Emotion"]}
-                text_dict[item["id"]].append(text_item)
+                text_dict[i].append(text_item)
         
 
         else:

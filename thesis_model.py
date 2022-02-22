@@ -105,21 +105,33 @@ class Trainer(object):
 
             
             # Compute prediction and loss
-            #This model uses a pretrained classification so some changes mayu be necessary
-            #truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
             
+            '''
+            #This model uses a pretrained classification so some changes mayu be necessary
+            truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
+            loss = truth_output.loss
+            
+            
+            #print("Loss Item: ",loss.item())
+            '''
+            
+            
+            #This uses custom models
             truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask)
+            loss = self.loss_fn(truth_output ,truth_label.flatten())
+            
 
-
+            '''
+            Check waht is being output
             print("Prediction: ", truth_output)
             print("Prediction Size: ", truth_output.size())
             print("Actual Label: ", truth_label.flatten())
             print("Actual Label Size: ", truth_label.flatten().size())
+            '''
             
-            #loss = truth_output.loss
-            #print("Loss Item: ",loss.item())
+            
 
-            loss = self.loss_fn(truth_output ,truth_label.flatten())
+            
             
 
             #loss = self.label_criterion(truth_output, truth_label)
@@ -160,13 +172,21 @@ class Trainer(object):
                 truth_label = truth_label.to(device)
 
 
+                '''
+                #BertForsSequencyClassification
+
                 truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
-
-                
                 test_loss += truth_output.loss.item()
-
                 logits = truth_output.logits.detach().cpu().numpy()
-                #logits = truth_output.logits.detach().numpy()
+                '''
+                
+                #Custom Models
+                truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask)
+                test_loss += self.loss_fn(truth_output ,truth_label.flatten())
+                logits = truth_output.detach().cpu().numpy()
+                
+
+
 
                 pred_flat = np.argmax(logits, axis=1).flatten()
                 labels_flat = truth_label.to('cpu').numpy()
@@ -229,14 +249,15 @@ if __name__ == '__main__':
     '''
 
 
-    dataset_type = 'AAAI'
+    #dataset_type = 'AAAI'
+    dataset_type = 'LIAR'
 
     writer = SummaryWriter()
 
     #print(torch.version.cuda)
     #print(torch.cuda.current_device())
 
-    #torch.cuda.device(1)
+    torch.cuda.device(1)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using {device} device')
@@ -305,7 +326,7 @@ if __name__ == '__main__':
     print(model)
 
 
-
+    #exit()
 
     #Training
     trainer = Trainer(model)

@@ -1,6 +1,7 @@
 
 import os
 import string
+from turtle import shape
 import torch
 import dataset
 import argparse
@@ -41,7 +42,7 @@ class Trainer(object):
     def __init__(self, model):
         self.model = model
 
-        self.label_criterion = nn.CrossEntropyLoss()
+        self.loss_fn = nn.CrossEntropyLoss()
 
         
         # self.multi_loss = MultiTaskLoss(2).cuda()
@@ -110,14 +111,15 @@ class Trainer(object):
             truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask)
 
 
-            #print("Prediction: ", truth_output)
-            #print("Actual: ", truth_label)
-            
+            print("Prediction: ", truth_output)
+            print("Prediction Size: ", truth_output.size())
+            print("Actual Label: ", truth_label.flatten())
+            print("Actual Label Size: ", truth_label.flatten().size())
             
             #loss = truth_output.loss
             #print("Loss Item: ",loss.item())
 
-            loss = self.label_criterion(truth_output,truth_label)
+            loss = self.loss_fn(truth_output ,truth_label.flatten())
             
 
             #loss = self.label_criterion(truth_output, truth_label)
@@ -231,10 +233,10 @@ if __name__ == '__main__':
 
     writer = SummaryWriter()
 
-    print(torch.version.cuda)
-    print(torch.cuda.current_device())
+    #print(torch.version.cuda)
+    #print(torch.cuda.current_device())
 
-    torch.cuda.device(1)
+    #torch.cuda.device(1)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using {device} device')

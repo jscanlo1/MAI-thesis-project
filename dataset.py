@@ -207,7 +207,7 @@ def load_data(input_max, dataset_type):
             text_dict[item["id"]].append(text_item)
         '''
 
-        
+        '''        
         #Sanity check print out some values
         
         for i in range(5):
@@ -216,7 +216,7 @@ def load_data(input_max, dataset_type):
             print(f'Text: {first_val}' )
 
         print('Dataset size ', len(text_dict))
-        
+        '''
        
 
         #Possibly try and combine into dict

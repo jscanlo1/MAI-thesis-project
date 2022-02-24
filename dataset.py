@@ -5,7 +5,7 @@ import numpy as np
 from transformers import BertTokenizer
 from torch.utils.data import Dataset
 import pandas as pd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from collections import defaultdict
 from keras.preprocessing.sequence import pad_sequences
 from nltk.corpus import stopwords
@@ -27,11 +27,39 @@ def cleantext(string):
     text = " ".join(text)
     return text
 
-class Vocabulary(object):
+class Vocabulary_AAAI(object):
     def __init__(self):
         self.label2id = {"fake": 0,
                          "real": 1,
                          }
+        self.id2label = {value: key for key, value in self.label2id.items()}
+
+    def num_labels(self):
+        return len(self.label2id)
+
+class Vocabulary_LIAR(object):
+    def __init__(self):
+        self.label2id = {"pants-fire": 0,
+                         "false": 1,
+                         "barely-true": 2,
+                         "half-true": 3,
+                         "mostly-true": 4,
+                         "true": 5
+                         }
+        self.id2label = {value: key for key, value in self.label2id.items()}
+
+    def num_labels(self):
+        return len(self.label2id)
+
+class Vocabulary_MELD(object):
+    def __init__(self):
+        self.label2id = {"neutral": 0,
+                         "surprise": 1,
+                         "fear": 2,
+                         "sadness": 3,
+                         "joy": 4,
+                         "anger": 5,
+                         "disgust": 6}
         self.id2label = {value: key for key, value in self.label2id.items()}
 
     def num_labels(self):
@@ -74,25 +102,38 @@ class CustomDataset(Dataset):
 
 def load_data(input_max, dataset_type):
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    vocab = Vocabulary()
+    
 
     if dataset_type == 'AAAI':
+        vocab = Vocabulary_AAAI()
+
+
         train_path = 'data/constraint_dataset/English_Train.xlsx'
         val_path = 'data/constraint_dataset/English_Val.xlsx'
         test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
 
     elif dataset_type == 'LIAR':
+        vocab = Vocabulary_LIAR()
         train_path = 'data/liar_dataset/train.tsv'
         val_path = 'data/liar_dataset/valid.tsv'
         test_path = 'data/liar_dataset/test.tsv'
 
     elif dataset_type == 'FACEBUZZ':
         #Change to actual paths
+        vocab = Vocabulary_AAAI()
         train_path = 'data/constraint_dataset/English_Train.xlsx'
         val_path = 'data/constraint_dataset/English_Val.xlsx'
         test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
+    
+    elif dataset_type == 'MELD':
+        vocab = Vocabulary_MELD()
+        
+        train_path = 'data/MELD_Dyadic_dataset/test_sent_emo_dya.csv'
+        val_path = 'data/MELD_Dyadic_dataset/dev_sent_emo_dya.csv'
+        test_path = 'data/MELD_Dyadic_dataset/test_sent_emo_dya.csv'
 
     else:
+        vocab = Vocabulary_AAAI()
         train_path = 'data/constraint_dataset/English_Train.xlsx'
         val_path = 'data/constraint_dataset/English_Val.xlsx'
         test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
@@ -105,16 +146,44 @@ def load_data(input_max, dataset_type):
         if dataset_type == 'AAAI':
             data = pd.read_excel(path)
 
+            text_dict = defaultdict(list)
+            for i, item in data.iterrows():
+                text_item = {"text": item["tweet"],
+                            "label": item["label"]}
+                text_dict[i].append(text_item)
+
         elif dataset_type == 'LIAR':
-            data = pd.read_csv(path, encoding="utf-8")
+            data = pd.read_csv(path, sep='\t',header=None)
+
+            text_dict = defaultdict(list)
+            for i, item in data.iterrows():
+                text_item = {"text": item[2],
+                            "label": item[1]}
+                text_dict[item[0]].append(text_item)
         
         elif dataset_type == 'FACEBUZZ':
             #Include actual red in specific to facebuzz
             data = pd.read_excel(path)
 
+        elif dataset_type == 'MELD':
+            data = pd.read_csv(path, encoding="utf-8")
+
+            text_dict = defaultdict(list)
+            for i, item in data.iterrows():
+                text_item = {"text": item["Utterance"],
+                            "label": item["Emotion"]}
+                text_dict[i].append(text_item)
+        
+
         else:
             #Default is AAAI for now
             data = pd.read_excel(path)
+            text_dict = defaultdict(list)
+            for i, item in data.iterrows():
+                text_item = {"text": item["Utterance"],
+                            "label": item["Emotion"]}
+                text_dict[item["id"]].append(text_item)
+
 
 
 
@@ -129,16 +198,18 @@ def load_data(input_max, dataset_type):
 
         #Possibly rethink how this data is read
         #Over complicated perhaps
+        '''
 
         text_dict = defaultdict(list)
         for i, item in data.iterrows():
             text_item = {"text": item["tweet"],
                         "label": item["label"]}
             text_dict[item["id"]].append(text_item)
-
-        
-        #Sanity check print out some values
         '''
+
+        '''        
+        #Sanity check print out some values
+        
         for i in range(5):
             first_key = list(text_dict)[i]
             first_val = list(text_dict.values())[i]

@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 import itertools
 
 import pandas as pd
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 from transformers import BertTokenizer
 from transformers import BertForSequenceClassification
@@ -34,7 +34,8 @@ from models.EmotionDetectionModel import EmotionDetectionModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
-lr = 5e-5
+#lr = 5e-5
+lr = 0.001
 alpha = 0.95
 max_grad_norm = 1.0
 

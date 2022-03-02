@@ -19,7 +19,7 @@ class FakeNewsModel(nn.Module):
 
         self.label_output_layer = nn.Sequential(
             nn.Dropout(0.1),
-            nn.Linear(num_labels+7,num_labels)
+            nn.Linear(num_labels+4,num_labels)
         )
 
 

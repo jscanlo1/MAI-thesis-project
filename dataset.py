@@ -65,6 +65,17 @@ class Vocabulary_MELD(object):
     def num_labels(self):
         return len(self.label2id)
 
+class Vocabulary_TSA(object):
+    def __init__(self):
+        self.label2id = {"Negative": 0,
+                         "Neutral": 1,
+                         "Positive": 2,
+                         "Irrelevant": 3}
+        self.id2label = {value: key for key, value in self.label2id.items()}
+
+    def num_labels(self):
+        return len(self.label2id)
+
 
 class CustomDataset(Dataset):
     def __init__(self, text, truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):
@@ -132,6 +143,13 @@ def load_data(input_max, dataset_type):
         val_path = 'data/MELD_Dyadic_dataset/dev_sent_emo_dya.csv'
         test_path = 'data/MELD_Dyadic_dataset/test_sent_emo_dya.csv'
 
+    elif dataset_type == 'TSA':
+        vocab = Vocabulary_TSA()
+        
+        train_path = 'data/Twitter_Sen_Analysis/twitter_training.csv'
+        val_path = 'data/Twitter_Sen_Analysis/twitter_validation.csv'
+        test_path = 'data/Twitter_Sen_Analysis/twitter_validation.csv'
+
     else:
         vocab = Vocabulary_AAAI()
         train_path = 'data/constraint_dataset/English_Train.xlsx'
@@ -173,6 +191,16 @@ def load_data(input_max, dataset_type):
                 text_item = {"text": item["Utterance"],
                             "label": item["Emotion"]}
                 text_dict[i].append(text_item)
+
+        elif dataset_type == 'TSA':
+            data = pd.read_csv(path, header=None ,encoding="utf-8")
+            data[3].fillna('', inplace = True)
+
+            text_dict = defaultdict(list)
+            for i, item in data.iterrows():
+                text_item = {"text": item[3],
+                            "label": item[2]}
+                text_dict[i].append(text_item)
         
 
         else:
@@ -207,7 +235,7 @@ def load_data(input_max, dataset_type):
             text_dict[item["id"]].append(text_item)
         '''
 
-        '''        
+               
         #Sanity check print out some values
         
         for i in range(5):
@@ -216,7 +244,7 @@ def load_data(input_max, dataset_type):
             print(f'Text: {first_val}' )
 
         print('Dataset size ', len(text_dict))
-        '''
+        
        
 
         #Possibly try and combine into dict
@@ -229,8 +257,8 @@ def load_data(input_max, dataset_type):
 
             #print(text_item)
             #print(text_item[0]['text'])
-
-            _text_input = tokenizer.encode(text_item[0]['text'])
+            
+            _text_input = tokenizer.encode(text_item[0]['text'], add_special_tokens=True)
 
 
 

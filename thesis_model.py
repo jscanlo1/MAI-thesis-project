@@ -34,8 +34,8 @@ from models.EmotionDetectionModel import EmotionDetectionModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
-#lr = 5e-5
-lr = 0.001
+lr = 5e-5
+#lr = 0.001
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -80,7 +80,7 @@ class Trainer(object):
 
         #self.model.EmotionModel.parameters().requires_grad = False
         #self.model.EmotionModel.bias.requires_grad = False
-        '''
+        
 
         for param in self.model.EmotionModel.parameters():
             param.requires_grad = False
@@ -88,12 +88,12 @@ class Trainer(object):
         bert_params = set(self.model.bert.parameters())
         emotion_params = set(self.model.EmotionModel.parameters())
         other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
-        '''
+        
  
         
 
-        bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params)
+        #bert_params = set(self.model.bert.parameters())
+        #other_params = list(set(self.model.parameters()) - bert_params)
 
         no_decay = ['bias', 'LayerNorm.weight']
 
@@ -164,6 +164,7 @@ class Trainer(object):
             # Backpropagation
             self.model.zero_grad()
             loss.backward()
+            #torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_grad_norm)
             self.optimizer.step()
 
             loss_array.append(loss.item())
@@ -342,21 +343,21 @@ if __name__ == '__main__':
     #Create Full fake news model
 
 
-    '''
+    
     #Set up emotion model
     
-    emotion_model_path = 'saved_models/emotion_model.pt'
-    EmotionModel = EmotionDetectionModel(num_labels=7).to(device)
+    emotion_model_path = 'saved_models/twitter_emotion_model.pt'
+    EmotionModel = EmotionDetectionModel(num_labels=4).to(device)
     EmotionModel.load_state_dict(torch.load(emotion_model_path))
     EmotionModel.eval()
 
     model = FakeNewsModel(num_labels,EmotionModel).to(device)
-    '''
+    
     
 
     #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
 
-    model = EmotionDetectionModel(num_labels=num_labels).to(device)
+    #model = EmotionDetectionModel(num_labels=num_labels).to(device)
     print(model)
 
 
@@ -367,7 +368,7 @@ if __name__ == '__main__':
 
 
 
-    epochs = 5
+    epochs = 3
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loss = trainer.train(train_dataloader)

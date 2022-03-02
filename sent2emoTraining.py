@@ -31,6 +31,7 @@ from transformers import AdamW
 from transformers.optimization import get_linear_schedule_with_warmup
 from models.FakeNewsModel import FakeNewsModel
 from models.EmotionDetectionModel import EmotionDetectionModel
+from sent2emoModel import sent2emoModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
@@ -279,7 +280,8 @@ if __name__ == '__main__':
 
 
     #dataset_type = 'AAAI'
-    dataset_type = 'LIAR'
+    #dataset_type = 'LIAR'
+    dataset_type = 'sent2emo'
 
     writer = SummaryWriter()
 
@@ -313,13 +315,13 @@ if __name__ == '__main__':
 
     print(num_labels)
 
-    num_batches = len(train_dataloader)
-    print(num_batches)
+    #num_batches = len(train_dataloader)
+    #print(num_batches)
     #Test that data is read in correctly
 
     
     
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    #tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     '''
     train_features, train_mask , train_token_type_ids,train_labels = next(itertools.islice(train_dataloader, 0, None))
@@ -347,21 +349,8 @@ if __name__ == '__main__':
     #Create Full fake news model
 
 
-    '''
-    #Set up emotion model
-    
-    emotion_model_path = 'saved_models/emotion_model.pt'
-    EmotionModel = EmotionDetectionModel(num_labels=7).to(device)
-    EmotionModel.load_state_dict(torch.load(emotion_model_path))
-    EmotionModel.eval()
 
-    model = FakeNewsModel(num_labels,EmotionModel).to(device)
-    '''
-    
-
-    #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
-
-    model = EmotionDetectionModel(num_labels=num_labels).to(device)
+    model = sent2emoModel(num_labels=num_labels).to(device)
     print(model)
 
 

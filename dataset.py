@@ -102,6 +102,8 @@ class CustomDataset(Dataset):
 
 def load_data(input_max, dataset_type):
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+
+    #tokenizer
     
 
     if dataset_type == 'AAAI':

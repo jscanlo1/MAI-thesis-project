@@ -3,11 +3,11 @@ import torch
 import torch.nn as nn
 from transformers import BertModel
 
-class EmotionDetectionModel(nn.Module):
+class sent2emoModel(nn.Module):
     def __init__(self,num_labels):
-        super(EmotionDetectionModel, self).__init__()
-        self.bert = BertModel.from_pretrained('bert-base-uncased')
-        
+        super(sent2emoModel, self).__init__()
+        #self.bert = BertModel.from_pretrained('bert-base-uncased')
+        self.embedding = nn.Embedding.from_pretrained(glove_vectors,freeze = True)
         self.lstm = nn.LSTM(768,256,batch_first=True,bidirectional=True)
         
         #self.soft

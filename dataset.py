@@ -193,7 +193,7 @@ def load_data(input_max, dataset_type):
             truth_label_input.append(_truth_label_input)
 
         #Manual padding
-        BERT_text_input = pad_sequences(BERT_text_input, maxlen=512, dtype="long", truncating="post", padding="post")
+        BERT_text_input = pad_sequences(BERT_text_input, maxlen=128, dtype="long", truncating="post", padding="post")
         attention_masks = []
 
         # Calculate Sequence Mask for Bert

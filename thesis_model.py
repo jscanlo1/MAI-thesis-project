@@ -34,8 +34,8 @@ from models.EmotionDetectionModel import EmotionDetectionModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
-#lr = 5e-5
-lr = 0.001
+lr = 5e-5
+#lr = 0.001
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -251,9 +251,13 @@ class Trainer(object):
 
 if __name__ == '__main__':
     
+
+    
+
     dataset_type = 'LIAR'
 
     writer = SummaryWriter()
+    torch.cuda.empty_cache()
 
     seed = 123
     random.seed(seed)
@@ -264,7 +268,7 @@ if __name__ == '__main__':
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using {device} device')
-
+    
 
     #Read in data and load it
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
@@ -321,7 +325,7 @@ if __name__ == '__main__':
     model = EmotionDetectionModel(num_labels=num_labels).to(device)
     # print(model)
 
-
+    torch.cuda.memory_summary(device=None, abbreviated=False)
 
     #Training
     trainer = Trainer(model,num_batches)

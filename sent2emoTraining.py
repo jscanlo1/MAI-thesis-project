@@ -234,3 +234,12 @@ for epoch in range(n_epochs):
     print(f'EPOCH: {epoch+1} \t loss = {avg_loss} \t val_loss = {avg_val_loss} \t Val_ACC = {acc} \t val F1: {f1}')
     #print('Epoch {}/{} \t loss={:.4f} \t val_loss={:.4f}  \t val_acc={:.4f}'.format(epoch + 1, n_epochs, avg_loss, avg_val_loss, val_accuracy))
     #print('Epoch {}/{} \t loss={:.4f} \t val_loss={:.4f}  \t val_acc={:.4f}  \t time={:.2f}s'.format(epoch + 1, n_epochs, avg_loss, avg_val_loss, val_accuracy, elapsed_time))
+
+
+
+
+
+
+################################################################
+# Save the model
+

@@ -14,7 +14,7 @@ class EmotionDetectionModel(nn.Module):
 
         self.label_output_layer = nn.Sequential(
             nn.Dropout(0.1),
-            nn.Linear(256*2, num_labels)
+            nn.Linear(768, num_labels)
         )
         #self.softmax = nn.Softmax(dim=1)
 

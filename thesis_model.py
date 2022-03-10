@@ -89,8 +89,6 @@ class Trainer(object):
         emotion_params = set(self.model.EmotionModel.parameters())
         other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
         '''
- 
-        
 
         bert_params = set(self.model.bert.parameters())
         other_params = list(set(self.model.parameters()) - bert_params)
@@ -108,7 +106,7 @@ class Trainer(object):
             'weight_decay_rate': 0.0},
             {'params': other_params,
             'lr': lr,
-            'weight_decay': weight_decay},
+            'weight_decay': weight_decay}
         ]
 
         self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=lr, weight_decay=weight_decay)
@@ -154,13 +152,6 @@ class Trainer(object):
             print("Actual Label: ", truth_label.flatten())
             print("Actual Label Size: ", truth_label.flatten().size())
             '''
-            
-            
-
-            
-            
-
-            #loss = self.label_criterion(truth_output, truth_label)
 
             # Backpropagation
             self.model.zero_grad()
@@ -177,11 +168,7 @@ class Trainer(object):
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
         self.scheduler.step()
         loss = np.mean(loss_array)
-        return loss
-        
-    
-
-        
+        return loss   
 
     def eval(self, data_loader):
         self.model.eval()
@@ -262,47 +249,24 @@ class Trainer(object):
 
 
 
-
-
-
-
-
-
 if __name__ == '__main__':
-
-    '''
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=string, default='AAAI')
-    #parser.add_argument('--dataset', type=string, default='AAAI')
-    args = parser.parse_args()
-    '''
-
-
-    #dataset_type = 'AAAI'
+    
     dataset_type = 'LIAR'
 
     writer = SummaryWriter()
-
-    #print(torch.version.cuda)
-    #print(torch.cuda.current_device())
 
     seed = 123
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-
-
     torch.cuda.device(1)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     print(f'Using {device} device')
 
 
-
-
     #Read in data and load it
-    #(train_set, dev_set, test_set), vocab = dataset.load_data(args.input_max_length)
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
 
     train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
@@ -310,18 +274,11 @@ if __name__ == '__main__':
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
 
     num_labels = vocab.num_labels()
-
-    print(num_labels)
-
     num_batches = len(train_dataloader)
-    print(num_batches)
-    #Test that data is read in correctly
 
-    
-    
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     '''
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     train_features, train_mask , train_token_type_ids,train_labels = next(itertools.islice(train_dataloader, 0, None))
     print(f"Feature batch shape: {train_features.size()}")
     print(f'Feature mask shape: {train_mask.size()}' )
@@ -342,35 +299,32 @@ if __name__ == '__main__':
 
     exit()
     '''
-    #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE
 
+
+
+    #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE
     #Create Full fake news model
 
 
     '''
-    #Set up emotion model
-    
+    # Set up emotion model
+
     emotion_model_path = 'saved_models/emotion_model.pt'
     EmotionModel = EmotionDetectionModel(num_labels=7).to(device)
     EmotionModel.load_state_dict(torch.load(emotion_model_path))
     EmotionModel.eval()
-
     model = FakeNewsModel(num_labels,EmotionModel).to(device)
     '''
     
-
     #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
 
     model = EmotionDetectionModel(num_labels=num_labels).to(device)
-    print(model)
+    # print(model)
 
 
-    #exit()
 
     #Training
     trainer = Trainer(model,num_batches)
-
-
 
     epochs = 3
     for t in range(epochs):
@@ -395,10 +349,7 @@ if __name__ == '__main__':
 
     #Save models
     save_path = 'saved_models/thesis_model_with_LSTM_FINAL.pt'
-
     trainer.save(save_path)
-
-
 
     #Load Model
     '''

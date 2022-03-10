@@ -113,10 +113,7 @@ class CustomDataset(Dataset):
 
 
 def load_data(input_max, dataset_type):
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
-    #tokenizer
-    
+    BERT_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     if dataset_type == 'AAAI':
         vocab = Vocabulary_AAAI()
@@ -159,117 +156,59 @@ def load_data(input_max, dataset_type):
         
         if dataset_type == 'AAAI':
             data = pd.read_excel(path)
-
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["tweet"],
-                            "label": item["label"]}
-                text_dict[i].append(text_item)
+            text_items = data["tweet"]
+            text_labels = data["label"]
 
         elif dataset_type == 'LIAR':
             data = pd.read_csv(path, sep='\t',header=None)
-
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item[2],
-                            "label": item[1]}
-                text_dict[item[0]].append(text_item)
-        
-        elif dataset_type == 'FACEBUZZ':
-            #Include actual red in specific to facebuzz
-            data = pd.read_excel(path)
+            text_items = data.iloc[:,2]
+            text_labels = data.iloc[:,1]
 
         elif dataset_type == 'MELD':
             data = pd.read_csv(path, encoding="utf-8")
+            text_items = data["Utterance"]
+            text_labels = data["Emotion"]
 
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["Utterance"],
-                            "label": item["Emotion"]}
-                text_dict[i].append(text_item)
-        
 
         else:
-            #Default is AAAI for now
-            data = pd.read_excel(path)
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["Utterance"],
-                            "label": item["Emotion"]}
-                text_dict[item["id"]].append(text_item)
+            print("INVALID DATASET TYPE")
+            exit()
 
 
-
-
-        
         #Optional data cleaning stage
-        #data['tweet'] = data['tweet'].map(lambda x: cleantext(x))
-
-        
-        #Check that data is read in ok
-        #print(data.head())
-
-
-        #Possibly rethink how this data is read
-        #Over complicated perhaps
-        '''
-
-        text_dict = defaultdict(list)
-        for i, item in data.iterrows():
-            text_item = {"text": item["tweet"],
-                        "label": item["label"]}
-            text_dict[item["id"]].append(text_item)
-        '''
-
-        '''        
-        #Sanity check print out some values
-        
-        for i in range(5):
-            first_key = list(text_dict)[i]
-            first_val = list(text_dict.values())[i]
-            print(f'Text: {first_val}' )
-
-        print('Dataset size ', len(text_dict))
-        '''
-       
+        #text_items = text_items.map(lambda x: cleantext(x))
 
         #Possibly try and combine into dict
-        text_input = []
+        BERT_text_input = []
         truth_label_input = []
 
+        # Tokenise text and labels
+        for i, (text,label) in enumerate(zip(text_items,text_labels)):
+            #print(f"TEXT: {text} \t LABEL: {label}")
 
-        
-        for text_item in text_dict.values():
+            BERT_text = BERT_tokenizer.encode(text)
+            _truth_label_input = [vocab.label2id[label]]
 
-            #print(text_item)
-            #print(text_item[0]['text'])
-
-            _text_input = tokenizer(padding="max_length", max_length=512, truncation=True).encode(text_item[0]['text'])
-
-
-
-            _truth_label_input = [vocab.label2id[text_item[0]['label']]]
-
-            text_input.append(_text_input)
+            BERT_text_input.append(BERT_text)
             truth_label_input.append(_truth_label_input)
+
         #Manual padding
-        text_input = pad_sequences(text_input, maxlen=512, dtype="long", truncating="post", padding="post")
+        BERT_text_input = pad_sequences(BERT_text_input, maxlen=512, dtype="long", truncating="post", padding="post")
         attention_masks = []
 
-        for seq in text_input:
+        # Calculate Sequence Mask for Bert
+        for seq in BERT_text_input:
             seq_mask = [float(i>0) for i in seq]
             attention_masks.append(seq_mask)
 
-        #Possibly include token type ids
-        #
+        # Calculate Token Type Ids for Bert
         token_type_ids = []
-
-        for x in text_input:
+        for x in BERT_text_input:
             seq_token_type_id = np.zeros_like(x)
             token_type_ids.append(seq_token_type_id)
 
 
-        return CustomDataset(text_input, truth_label_input, token_type_ids, attention_masks)
+        return CustomDataset(BERT_text_input, truth_label_input, token_type_ids, attention_masks)
 
     return (
                processing_data(train_path),

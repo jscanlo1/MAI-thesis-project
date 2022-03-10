@@ -24,13 +24,15 @@ class EmotionDetectionModel(nn.Module):
 
         bert_output = self.bert(input_ids = text_input, attention_mask  = attention_mask)
 
+        '''
         lstm_output, (h,c) = self.lstm(bert_output.last_hidden_state)
         hidden = torch.cat((lstm_output[:,-1, :256],lstm_output[:,-1, :256]), dim = -1)
         label_output = self.label_output_layer(hidden.view(-1,256*2))
+        '''
         
         #print(f'Bert Output: {bert_output.pooler_output }    Size: {bert_output.pooler_output.size()}')        
         #bert_outputs = torch.cat(bert_outputs, dim=1)
-        
+        label_output = self.label_output_layer(bert_output.pooler_output)
 
         #output = torch.softmax(label_output)
         

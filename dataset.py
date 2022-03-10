@@ -232,7 +232,7 @@ def load_data(input_max, dataset_type):
             #print(text_item)
             #print(text_item[0]['text'])
 
-            _text_input = tokenizer.encode(text_item[0]['text'])
+            _text_input = tokenizer(padding="max_length", max_length=512, truncation=True).encode(text_item[0]['text'])
 
 
 
@@ -240,8 +240,8 @@ def load_data(input_max, dataset_type):
 
             text_input.append(_text_input)
             truth_label_input.append(_truth_label_input)
-        
-        text_input = pad_sequences(text_input, maxlen=128, dtype="long", truncating="post", padding="post")
+        #Manual padding
+        text_input = pad_sequences(text_input, maxlen=512, dtype="long", truncating="post", padding="post")
         attention_masks = []
 
         for seq in text_input:

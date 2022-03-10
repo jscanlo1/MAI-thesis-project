@@ -1,397 +1,196 @@
-
-import os
-import random
-import string
-import torch
-import dataset
-import argparse
-
 import numpy as np
-from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
-from torch.utils.tensorboard import SummaryWriter
-
-import itertools
-
-import pandas as pd
-#import matplotlib.pyplot as plt
-
-from transformers import BertTokenizer
-from transformers import BertForSequenceClassification
+import pickle
+import bcolz
+import dataset
+import torch
+import time
 import torch.nn as nn
-import torch.optim as optim
-
-#Import some libraries for calculating metrics
-from sklearn.metrics import f1_score,precision_score,accuracy_score
-
-
-#from nltk.corpus import stopwords
-#from sklearn.preprocessing import LabelEncoder
-from transformers import AdamW
-from transformers.optimization import get_linear_schedule_with_warmup
-from models.FakeNewsModel import FakeNewsModel
-from models.EmotionDetectionModel import EmotionDetectionModel
+from torchtext import data, datasets, vocab
+import torch.nn.functional as F
+import pandas as pd
+from keras.preprocessing import text
+from keras.preprocessing.sequence import pad_sequences
 from sent2emoModel import sent2emoModel
+from keras.preprocessing.text import Tokenizer
 
-bert_lr = 1e-5
-weight_decay = 1e-5
-#lr = 5e-5
-lr = 0.001
-alpha = 0.95
-max_grad_norm = 1.0
+#########################################################
+# Download necessary GLOVE vectors and details
+
+vectors = bcolz.open(f'glove/6B.50.dat')[:]
+words = pickle.load(open(f'glove/6B.50_words.pkl', 'rb'))
+word2idx = pickle.load(open(f'glove/6B.50_idx.pkl', 'rb'))
+
+glove = {w: vectors[word2idx[w]] for w in words}
+
+#########################################################
+# Create a vocab and dataset
+
+# Convert Labels to ints
+vocab_ = dataset.Vocabulary_LIAR()
+# Paths to data files
+# Paths should be to TWITTER file for sense training
+
+train_path = 'data/liar_dataset/train.tsv'
+val_path = 'data/liar_dataset/valid.tsv'
+test_path = 'data/liar_dataset/test.tsv'
+
+def ProcessingData(path,vocab):
+    data = pd.read_csv(path, sep='\t',header=None)
+
+    text_items = data.iloc[:,2]
+    text_labels = data.iloc[:,1]
+    text_items = text_items.map(lambda x: dataset.cleantext(x))
+
+    text_item_words = []
+    text_item_label = []
+    for i,(text_,label_) in enumerate(zip(text_items,text_labels)):
+
+        _text_item = text_
+        _label = [vocab.label2id[label_]]
+
+        text_item_words.append(_text_item)
+        text_item_label.append(_label)
 
 
-class Trainer(object):
-    def __init__(self, model,num_batches):
-        self.model = model
+    #Possibly make tensors
+    return text_item_words, text_item_label
 
-        self.loss_fn = nn.CrossEntropyLoss()
 
+train_text,train_labels = ProcessingData(train_path,vocab_)
+val_text,val_labels = ProcessingData(val_path,vocab_)
+test_text,test_labels = ProcessingData(test_path,vocab_)
+
+dataset_vocab = set()
+
+for text_ in train_text:
+    for x in text_:
+        dataset_vocab.update(x)
+
+
+
+t = Tokenizer()
+t.fit_on_texts(list(train_text) + list(val_text))
+vocab_size = len(t.word_index) + 1
+encoded_train = t.texts_to_sequences(train_text)
+padded_train = pad_sequences(encoded_train, maxlen=128, truncating="post", padding='post')
+
+encoded_val = t.texts_to_sequences(val_text)
+padded_val = pad_sequences(encoded_val, maxlen=128, truncating="post", padding='post')
+
+vocab_size = len(t.word_index) + 1
+
+
+######################################################
+# Create a Glove Matrix for the Vocab
+# Use a set so no repeats
+
+matrix_len = len(dataset_vocab)
+weights_matrix = np.zeros((matrix_len, 50))
+words_found = 0
+
+embedding_matrix = np.zeros((vocab_size, 50))
+for word, i in t.word_index.items():
+    try:
+        embedding_vector = glove[word]
+        embedding_matrix[i] = embedding_vector
+    except KeyError:
+        embedding_vector = np.random.normal(scale=0.6, size=(50,))
         
-        # self.multi_loss = MultiTaskLoss(2).cuda()
+        embedding_matrix[i] = embedding_vector
+'''
+for i, word in enumerate(dataset_vocab):
+    try: 
+        weights_matrix[i] = glove[word]
+        words_found += 1
+    except KeyError:
+        weights_matrix[i] = np.random.normal(scale=0.6, size=(50, ))
 
-        '''
-
-        param_optimizer = list(model.named_parameters())
-        no_decay = ['bias', 'gamma', 'beta']
-        optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
-            'weight_decay_rate': 0.01},
-            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
-            'weight_decay_rate': 0.0}
-        ]
-        '''
-
-        '''
-        self.optimizer = BertAdam(optimizer_grouped_parameters,
-                     lr=2e-5,
-                     warmup=.1)
-        '''
-
-        '''
-        #Params for straightfoward bert models
-        bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params)
-        '''
+'''
 
 
+#Pad the sequences
+#padded_train_text = pad_sequences(train_text, maxlen=128, padding='post')
+#padded_train_text = pad_sequences(train_text, maxlen=128, dtype="string", truncating="post", padding="post")
 
-        # Set up params for thesis model
-        # Must include provisions for frozen emotion detection model
 
-        #self.model.EmotionModel.parameters().requires_grad = False
-        #self.model.EmotionModel.bias.requires_grad = False
-        '''
+num_labels = vocab_.num_labels()
 
-        for param in self.model.EmotionModel.parameters():
-            param.requires_grad = False
+embedding_matrix = torch.tensor(embedding_matrix)
+#print(np.shape(x_data))
 
-        bert_params = set(self.model.bert.parameters())
-        emotion_params = set(self.model.EmotionModel.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
-        '''
- 
-        
 
-        bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params)
+#print(len(padded_tweets[0]))
+#print(padded_tweets[0])
 
-        no_decay = ['bias', 'LayerNorm.weight']
+################################
+# convery all datasets to tokens
+train_text = padded_train
+val_text = padded_val
 
-        #Include Paramters for Loss [possibly e.g. multiLoss]
 
-        optimizer_grouped_parameters = [
-            {'params': [p for n, p in model.bert.named_parameters() if not any(nd in n for nd in no_decay)],
-            'lr': bert_lr,
-            'weight_decay': 0.01},
-            {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
-            'lr': bert_lr,
-            'weight_decay_rate': 0.0},
-            {'params': other_params,
-            'lr': lr,
-            'weight_decay': weight_decay},
-        ]
 
-        self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=lr, weight_decay=weight_decay)
-        self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
-        #self.scheduler = get_linear_schedule_with_warmup(optimizer_grouped_parameters,num_warmup_steps=3,num_training_steps=5*num_batches)
 
-    def train(self, data_loader):
 
-        self.model.train()
 
-        size = len(data_loader.dataset)
+#######################################################
+# Set up training
 
-        loss_array = []
+n_epochs = 6
+model = sent2emoModel(embedding_matrix=embedding_matrix,max_features = matrix_len ,num_labels=num_labels)
+loss_fn = nn.CrossEntropyLoss(reduction='sum')
+optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001)
+#model.cuda()
 
-        for batch, (train_features, train_mask , train_token_type_ids, truth_label) in enumerate(data_loader):
-            train_features = train_features.to(device)
-            train_mask = train_mask.to(device)
-            train_token_type_ids = train_token_type_ids.to(device)
-            truth_label = truth_label.to(device)
+batch_size = 32
+# Load train and test in CUDA Memory
+#Set these to CUDA with .cuda()
+print(train_text[0])
+#train_text = torch.from_numpy(train_text)
+x_train = torch.tensor(train_text, dtype=torch.long)
+y_train = torch.tensor(train_labels, dtype=torch.long)
+x_cv = torch.tensor(val_text, dtype=torch.long)
+y_cv = torch.tensor(val_labels, dtype=torch.long)
+# Create Torch datasets
+train = torch.utils.data.TensorDataset(x_train, y_train)
+valid = torch.utils.data.TensorDataset(x_cv, y_cv)
+# Create Data Loaders
+train_loader = torch.utils.data.DataLoader(train, batch_size=batch_size, shuffle=True)
+valid_loader = torch.utils.data.DataLoader(valid, batch_size=batch_size, shuffle=False)
+train_loss = []
+valid_loss = []
+for epoch in range(n_epochs):
+    size = size = len(train_loader.dataset)
+    start_time = time.time()
+    # Set model to train configuration
+    model.train()
+    avg_loss = 0.  
+    for i, (x_batch, y_batch) in enumerate(train_loader):
+        # Predict/Forward Pass
+        y_pred = model(x_batch)
+        # Compute loss
+        loss = loss_fn(y_pred, y_batch.flatten())
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+        avg_loss += loss.item() / len(train_loader)
 
-            
-            # Compute prediction and loss
-            
-            '''
-            #This model uses a pretrained classification so some changes mayu be necessary
-            truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
-            loss = truth_output.loss
-            
-            
-            #print("Loss Item: ",loss.item())
-            '''
-            
-            
-            #This uses custom models
-            truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask)
-            loss = self.loss_fn(truth_output ,truth_label.flatten())
-            
-
-            '''
-            Check waht is being output
-            print("Prediction: ", truth_output)
-            print("Prediction Size: ", truth_output.size())
-            print("Actual Label: ", truth_label.flatten())
-            print("Actual Label Size: ", truth_label.flatten().size())
-            '''
-            
-            
-
-            
-            
-
-            #loss = self.label_criterion(truth_output, truth_label)
-
-            # Backpropagation
-            self.model.zero_grad()
-            loss.backward()
-
-            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_grad_norm)
-            self.optimizer.step()
-            
-
-            loss_array.append(loss.item())
-
-            if batch % 20 == 0:
-                loss, current = loss.item(), batch * len(train_features)
+        if i % 20 == 0:
+                loss, current = loss.item(), i * len(x_batch)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-        self.scheduler.step()
-        loss = np.mean(loss_array)
-        return loss
-        
-    
-
-        
-
-    def eval(self, data_loader):
-        self.model.eval()
-        loss_array = []
-        pred_flat_array = []
-        labels_flat_array = []
-
-        size = len(data_loader.dataset)
-        num_batches = len(data_loader)
-        test_loss, correct = 0, 0
-
-        with torch.no_grad():
-            for train_features, train_mask , train_token_type_ids, truth_label in data_loader:
-                train_features = train_features.to(device)
-                train_mask = train_mask.to(device)
-                train_token_type_ids = train_token_type_ids.to(device)
-                truth_label = truth_label.to(device)
-
-
-                '''
-                #BertForsSequencyClassification
-
-                truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
-                test_loss += truth_output.loss.item()
-                logits = truth_output.logits.detach().cpu().numpy()
-                '''
-                
-                #Custom Models
-                truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask)
-                test_loss += self.loss_fn(truth_output ,truth_label.flatten())
-                logits = truth_output.detach().cpu().numpy()
-                
-
-
-
-                pred_flat = np.argmax(logits, axis=1).flatten()
-                labels_flat = truth_label.to('cpu').numpy()
-                #labels_flat = truth_label.numpy().flatten()
-
-                correct += np.sum(pred_flat == labels_flat)
-
-                pred_flat_array.append(pred_flat)
-                labels_flat_array.append(labels_flat)
-
-                
-
-                #loss_array.append(loss.item())
-        labels_flat_array = np.concatenate(labels_flat_array)
-        pred_flat_array = np.concatenate(pred_flat_array)
-
-        #print("Labels: ", labels_flat_array[0])
-        #print("Preds: ", pred_flat_array[0])
-
-        f1 = f1_score(labels_flat_array,pred_flat_array, average='weighted')
-        acc = accuracy_score(labels_flat_array,pred_flat_array)
-        prec = precision_score(labels_flat_array,pred_flat_array, average='weighted')
-
-
-        #loss = np.mean(loss_array)
-        #print('Correct: ', correct)
-        test_loss /= num_batches
-        correct /= size
-
-        #print('Size: ', size)
-        #print('Correct: ', correct)
-
-        test_accuracy = (100*correct)
-        #print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
-
-        return test_loss, acc, prec, f1
-
-
-    def save(self, path):
-        torch.save(self.model.state_dict(), path)
-
-    def load(self, path):
-        self.model.load_state_dict(torch.load(path))
-
-
-
-
-
-
-
-
-
-if __name__ == '__main__':
-
-    '''
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset', type=string, default='AAAI')
-    #parser.add_argument('--dataset', type=string, default='AAAI')
-    args = parser.parse_args()
-    '''
-
-
-    #dataset_type = 'AAAI'
-    #dataset_type = 'LIAR'
-    dataset_type = 'sent2emo'
-
-    writer = SummaryWriter()
-
-    #print(torch.version.cuda)
-    #print(torch.cuda.current_device())
-
-    seed = 123
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
-
-
-    torch.cuda.device(1)
-
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f'Using {device} device')
-
-
-
-
-    #Read in data and load it
-    #(train_set, dev_set, test_set), vocab = dataset.load_data(args.input_max_length)
-    (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
-
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
-    val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
-    test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
-
-    num_labels = vocab.num_labels()
-
-    print(num_labels)
-
-    #num_batches = len(train_dataloader)
-    #print(num_batches)
-    #Test that data is read in correctly
-
-    
-    
-    #tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-
-    '''
-    train_features, train_mask , train_token_type_ids,train_labels = next(itertools.islice(train_dataloader, 0, None))
-    print(f"Feature batch shape: {train_features.size()}")
-    print(f'Feature mask shape: {train_mask.size()}' )
-    print(f'Feature token type ids shape: {train_token_type_ids.size()}' )
-    print(f"Labels batch shape: {train_labels.size()}")
-    text = train_features[4]
-    mask = train_mask[4]
-    token_type_ids = train_token_type_ids[4]
-    label = train_labels[4]
-    print(f"Text Tokens: {text}")
-    
-    print("Words: " , tokenizer.convert_ids_to_tokens(text))
-    print('Mask: ', mask)
-    print('Token Type IDs: ', token_type_ids)
-    print(f"Label: {label}")
-    
-
-
-    exit()
-    '''
-    #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE
-
-    #Create Full fake news model
-
-
-
-    model = sent2emoModel(num_labels=num_labels).to(device)
-    print(model)
-
-
-    #exit()
-
-    #Training
-    trainer = Trainer(model,num_batches)
-
-
-
-    epochs = 3
-    for t in range(epochs):
-        print(f"Epoch {t+1}\n-------------------------------")
-        train_loss = trainer.train(train_dataloader)
-        print("Epoch: {}     Train Loss: {:.8f} ".format(t+1, train_loss))
-        dev_loss, dev_acc, dev_prec, dev_F1 = trainer.eval(val_dataloader)
-        print("Epoch: {}     Dev Loss: {:.8f}     Dev Acc: {:.4f}     Dev Prec {:.4f}     Dev F1 {:.4f}".format(t+1, dev_loss, dev_acc, dev_prec, dev_F1))
-
-        writer.add_scalars('Training Vs validation Loss',{'Training':train_loss, 'Validation': dev_loss, }, t+1)
-        
-        print("---------------------------------")
-    
-    print('Finished Training')
-
-    writer.flush()
-
-    #test_loss, test_f1 = trainer.eval(test_loader)
-    test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
-    print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
-
-
-    #Save models
-    save_path = 'saved_models/thesis_model_with_LSTM_FINAL.pt'
-
-    trainer.save(save_path)
-
-
-
-    #Load Model
-    '''
-    model = TheModelClass(*args, **kwargs)
-    model.load_state_dict(torch.load(save_path))
-    model.eval()
-    '''
+    # Set model to validation configuration -Doesn't get trained here
+    model.eval()        
+    avg_val_loss = 0.
+    val_preds = np.zeros((len(x_cv),num_labels))
+    for i, (x_batch, y_batch) in enumerate(valid_loader):
+        y_pred = model(x_batch).detach()
+        avg_val_loss += loss_fn(y_pred, y_batch.flatten()).item() / len(valid_loader)
+        # keep/store predictions
+        val_preds[i * batch_size:(i+1) * batch_size] = F.softmax(y_pred,dim=1).cpu().numpy()
+    # Check Accuracy
+    val_accuracy = sum(val_preds.argmax(axis=1)==val_labels)/len(val_labels)
+    train_loss.append(avg_loss)
+    valid_loss.append(avg_val_loss)
+    elapsed_time = time.time() - start_time
+    print(f'EPOCH: {epoch+1} \t loss = {avg_loss} \t val_loss = {avg_val_loss} \t Val_ACC = {val_accuracy}')
+    #print('Epoch {}/{} \t loss={:.4f} \t val_loss={:.4f}  \t val_acc={:.4f}'.format(epoch + 1, n_epochs, avg_loss, avg_val_loss, val_accuracy))
+    #print('Epoch {}/{} \t loss={:.4f} \t val_loss={:.4f}  \t val_acc={:.4f}  \t time={:.2f}s'.format(epoch + 1, n_epochs, avg_loss, avg_val_loss, val_accuracy, elapsed_time))

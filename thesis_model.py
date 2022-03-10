@@ -346,18 +346,19 @@ if __name__ == '__main__':
     
     #Set up emotion model
     
+    '''
     emotion_model_path = 'saved_models/twitter_emotion_model.pt'
     EmotionModel = EmotionDetectionModel(num_labels=4).to(device)
     EmotionModel.load_state_dict(torch.load(emotion_model_path))
     EmotionModel.eval()
 
     model = FakeNewsModel(num_labels,EmotionModel).to(device)
-    
+    '''
     
 
     #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
 
-    #model = EmotionDetectionModel(num_labels=num_labels).to(device)
+    model = EmotionDetectionModel(num_labels=num_labels).to(device)
     print(model)
 
 

@@ -12,6 +12,7 @@ from keras.preprocessing import text
 from keras.preprocessing.sequence import pad_sequences
 from sent2emoModel import sent2emoModel
 from keras.preprocessing.text import Tokenizer
+from sklearn.metrics import f1_score,precision_score,accuracy_score
 
 #########################################################
 # Download necessary GLOVE vectors and details
@@ -26,25 +27,51 @@ glove = {w: vectors[word2idx[w]] for w in words}
 # Create a vocab and dataset
 
 # Convert Labels to ints
-vocab_ = dataset.Vocabulary_LIAR()
+#vocab_ = dataset.Vocabulary_LIAR()
+#vocab_ = dataset.Vocabulary_TWITTER()
+vocab_ = dataset.Vocabulary_MELD()
 # Paths to data files
 # Paths should be to TWITTER file for sense training
 
+'''
 train_path = 'data/liar_dataset/train.tsv'
 val_path = 'data/liar_dataset/valid.tsv'
 test_path = 'data/liar_dataset/test.tsv'
+'''
+#train_path = 'data/TWITTER/twitter_training.csv'
+#val_path = 'data/TWITTER/twitter_validation.csv'
+
+train_path = 'data/MELD_Dyadic_dataset/train_sent_emo_dya.csv'
+val_path = 'data/MELD_Dyadic_dataset/dev_sent_emo_dya.csv'
 
 def ProcessingData(path,vocab):
+    #For LIAR dataset
+    '''
     data = pd.read_csv(path, sep='\t',header=None)
 
     text_items = data.iloc[:,2]
     text_labels = data.iloc[:,1]
     text_items = text_items.map(lambda x: dataset.cleantext(x))
+    '''
+    #For TWITTER dataset
+    '''
+    data = pd.read_csv(path,header=None)
+
+    text_items = data.iloc[:,2]
+    text_labels = data.iloc[:,1]
+    text_items = text_items.map(lambda x: dataset.cleantext(x))
+    '''
+    
+    #For Meld
+    data = pd.read_csv(path, encoding="utf-8")
+    text_items = data["Utterance"]
+    text_labels = data["Emotion"]
+    text_items = text_items.map(lambda x: dataset.cleantext(x))
 
     text_item_words = []
     text_item_label = []
     for i,(text_,label_) in enumerate(zip(text_items,text_labels)):
-
+    #    print(f"TEXT: {text_} \t EMOTION: {label_}")
         _text_item = text_
         _label = [vocab.label2id[label_]]
 
@@ -58,7 +85,7 @@ def ProcessingData(path,vocab):
 
 train_text,train_labels = ProcessingData(train_path,vocab_)
 val_text,val_labels = ProcessingData(val_path,vocab_)
-test_text,test_labels = ProcessingData(test_path,vocab_)
+#test_text,test_labels = ProcessingData(test_path,vocab_)
 
 dataset_vocab = set()
 
@@ -138,13 +165,13 @@ val_text = padded_val
 n_epochs = 6
 model = sent2emoModel(embedding_matrix=embedding_matrix,max_features = matrix_len ,num_labels=num_labels)
 loss_fn = nn.CrossEntropyLoss(reduction='sum')
-optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001)
+optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001, betas= [0.9,0.999])
 #model.cuda()
 
 batch_size = 32
 # Load train and test in CUDA Memory
 #Set these to CUDA with .cuda()
-print(train_text[0])
+#print(train_text[0])
 #train_text = torch.from_numpy(train_text)
 x_train = torch.tensor(train_text, dtype=torch.long)
 y_train = torch.tensor(train_labels, dtype=torch.long)
@@ -164,6 +191,7 @@ for epoch in range(n_epochs):
     # Set model to train configuration
     model.train()
     avg_loss = 0.  
+    loss_array = []
     for i, (x_batch, y_batch) in enumerate(train_loader):
         # Predict/Forward Pass
         y_pred = model(x_batch)
@@ -173,9 +201,10 @@ for epoch in range(n_epochs):
         loss.backward()
         optimizer.step()
         avg_loss += loss.item() / len(train_loader)
+        loss_array.append(loss.item())
 
         if i % 20 == 0:
-                loss, current = loss.item(), i * len(x_batch)
+                loss, current = loss.item()/len(y_batch), i * len(x_batch)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
     # Set model to validation configuration -Doesn't get trained here
     model.eval()        
@@ -183,14 +212,25 @@ for epoch in range(n_epochs):
     val_preds = np.zeros((len(x_cv),num_labels))
     for i, (x_batch, y_batch) in enumerate(valid_loader):
         y_pred = model(x_batch).detach()
-        avg_val_loss += loss_fn(y_pred, y_batch.flatten()).item() / len(valid_loader)
+        avg_val_loss += loss_fn(y_pred, y_batch.flatten())
         # keep/store predictions
         val_preds[i * batch_size:(i+1) * batch_size] = F.softmax(y_pred,dim=1).cpu().numpy()
     # Check Accuracy
+    print(np.shape(val_preds))
     val_accuracy = sum(val_preds.argmax(axis=1)==val_labels)/len(val_labels)
+    print(np.shape(val_accuracy))
+    #train_loss.append(avg_loss)
+    avg_loss = np.mean(loss_array)/batch_size
     train_loss.append(avg_loss)
+    avg_val_loss /= len(valid_loader.dataset)
     valid_loss.append(avg_val_loss)
     elapsed_time = time.time() - start_time
-    print(f'EPOCH: {epoch+1} \t loss = {avg_loss} \t val_loss = {avg_val_loss} \t Val_ACC = {val_accuracy}')
+
+    pred_flat = np.argmax(val_preds, axis=1)
+    #labels_flat = val_labels.to('cpu').numpy()
+
+    f1 = f1_score(val_labels,pred_flat, average='weighted')
+    acc = accuracy_score(val_labels,pred_flat)
+    print(f'EPOCH: {epoch+1} \t loss = {avg_loss} \t val_loss = {avg_val_loss} \t Val_ACC = {acc} \t val F1: {f1}')
     #print('Epoch {}/{} \t loss={:.4f} \t val_loss={:.4f}  \t val_acc={:.4f}'.format(epoch + 1, n_epochs, avg_loss, avg_val_loss, val_accuracy))
     #print('Epoch {}/{} \t loss={:.4f} \t val_loss={:.4f}  \t val_acc={:.4f}  \t time={:.2f}s'.format(epoch + 1, n_epochs, avg_loss, avg_val_loss, val_accuracy, elapsed_time))

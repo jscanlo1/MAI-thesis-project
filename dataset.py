@@ -65,6 +65,18 @@ class Vocabulary_MELD(object):
     def num_labels(self):
         return len(self.label2id)
 
+class Vocabulary_TWITTER(object):
+    def __init__(self):
+        self.label2id = {"Neutral": 0,
+                         "Positive": 1,
+                         "Negative": 2,
+                         "Irrelevant": 3}
+
+        self.id2label = {value: key for key, value in self.label2id.items()}
+
+    def num_labels(self):
+        return len(self.label2id)
+
 
 class CustomDataset(Dataset):
     def __init__(self, text, truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):

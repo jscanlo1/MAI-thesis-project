@@ -8,8 +8,10 @@ import pandas as pd
 #import matplotlib.pyplot as plt
 from collections import defaultdict
 from keras.preprocessing.sequence import pad_sequences
+from keras.preprocessing.text import Tokenizer
 from nltk.corpus import stopwords
-
+import pickle
+import bcolz
 
 
 #Function for cleaning text can be tweaked
@@ -79,8 +81,9 @@ class Vocabulary_TWITTER(object):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, text, truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):
+    def __init__(self, text, glove_text, truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):
         self.text = text
+        self.glove_text = glove_text
         self.truth_labels = truth_labels
         self.attention_masks = attention_masks
         self.token_type_ids = token_type_ids
@@ -105,8 +108,10 @@ class CustomDataset(Dataset):
 
             #Potentially move conversion to tensors to init
             #
+        
+        # Return the BERT Embeddings
 
-        return torch.LongTensor(text_item), torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
+        return torch.LongTensor(text_item), torch.LongTensor(self.glove_text[idx]), torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
 
 
 
@@ -175,11 +180,15 @@ def load_data(input_max, dataset_type):
             exit()
 
 
+        with open("tokenizer.pickle", "rb") as handle:
+            t = pickle.load(handle)
+
         #Optional data cleaning stage
         #text_items = text_items.map(lambda x: cleantext(x))
 
         #Possibly try and combine into dict
         BERT_text_input = []
+        GLOVE_text_input = []
         truth_label_input = []
 
         # Tokenise text and labels
@@ -187,13 +196,19 @@ def load_data(input_max, dataset_type):
             #print(f"TEXT: {text} \t LABEL: {label}")
 
             BERT_text = BERT_tokenizer.encode(text)
+            GLOVE_text = t.texts_to_sequences(text)
             _truth_label_input = [vocab.label2id[label]]
 
+
             BERT_text_input.append(BERT_text)
+            GLOVE_text_input.append(GLOVE_text)
             truth_label_input.append(_truth_label_input)
+
+
 
         #Manual padding
         BERT_text_input = pad_sequences(BERT_text_input, maxlen=128, dtype="long", truncating="post", padding="post")
+        GLOVE_text_input = pad_sequences(GLOVE_text_input, maxlen=128, dtype="long", truncating="post", padding="post")
         attention_masks = []
 
         # Calculate Sequence Mask for Bert
@@ -208,7 +223,12 @@ def load_data(input_max, dataset_type):
             token_type_ids.append(seq_token_type_id)
 
 
-        return CustomDataset(BERT_text_input, truth_label_input, token_type_ids, attention_masks)
+
+        
+
+
+
+        return CustomDataset(BERT_text_input, GLOVE_text, truth_label_input, token_type_ids, attention_masks)
 
     return (
                processing_data(train_path),

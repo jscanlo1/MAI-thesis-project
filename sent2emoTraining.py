@@ -10,7 +10,7 @@ import torch.nn.functional as F
 import pandas as pd
 from keras.preprocessing import text
 from keras.preprocessing.sequence import pad_sequences
-from sent2emoModel import sent2emoModel
+from models.sent2emoModel import sent2emoModel
 from keras.preprocessing.text import Tokenizer
 from sklearn.metrics import f1_score,precision_score,accuracy_score
 
@@ -95,7 +95,7 @@ for text_ in train_text:
 
 
 
-t = Tokenizer()
+t = Tokenizer(oov_token=1)
 t.fit_on_texts(list(train_text) + list(val_text))
 vocab_size = len(t.word_index) + 1
 encoded_train = t.texts_to_sequences(train_text)
@@ -106,6 +106,10 @@ padded_val = pad_sequences(encoded_val, maxlen=128, truncating="post", padding='
 
 vocab_size = len(t.word_index) + 1
 
+
+#Save tokenizer
+with open("tokenizer.pickle","wb") as handle:
+    pickle.dump(t,handle,protocol=pickle.HIGHEST_PROTOCOL)
 
 ######################################################
 # Create a Glove Matrix for the Vocab
@@ -186,27 +190,45 @@ valid_loader = torch.utils.data.DataLoader(valid, batch_size=batch_size, shuffle
 train_loss = []
 valid_loss = []
 for epoch in range(n_epochs):
-    size = size = len(train_loader.dataset)
+    size = len(train_loader.dataset)
     start_time = time.time()
     # Set model to train configuration
     model.train()
     avg_loss = 0.  
     loss_array = []
+    train_label_pred = []
+    train_label_gold = []
+
     for i, (x_batch, y_batch) in enumerate(train_loader):
         # Predict/Forward Pass
         y_pred = model(x_batch)
         # Compute loss
+
+        y_pred_maxed = torch.argmax(y_pred,-1)
+        train_label_pred.append(y_pred_maxed.detach().cpu().numpy())
+        train_label_gold.append(y_batch.cpu().numpy())
+
         loss = loss_fn(y_pred, y_batch.flatten())
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        avg_loss += loss.item() / len(train_loader)
+        #avg_loss += loss.item() / len(train_loader)
         loss_array.append(loss.item())
 
         if i % 20 == 0:
                 loss, current = loss.item()/len(y_batch), i * len(x_batch)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
     # Set model to validation configuration -Doesn't get trained here
+    avg_loss = np.mean(loss_array)/batch_size
+
+    train_label_pred = np.concatenate(train_label_pred)
+    train_label_gold = np.concatenate(train_label_gold)
+
+    train_acc = accuracy_score(train_label_gold, train_label_pred)
+    train_f1 = f1_score(train_label_gold, train_label_pred, average='weighted')
+    print(f"EPOCH: {epoch+1} \t Train Loss: {avg_loss} \t Train Acc: {train_acc} \t val F1: {train_f1}")
+
+
     model.eval()        
     avg_val_loss = 0.
     val_preds = np.zeros((len(x_cv),num_labels))
@@ -220,7 +242,7 @@ for epoch in range(n_epochs):
     val_accuracy = sum(val_preds.argmax(axis=1)==val_labels)/len(val_labels)
     print(np.shape(val_accuracy))
     #train_loss.append(avg_loss)
-    avg_loss = np.mean(loss_array)/batch_size
+    
     train_loss.append(avg_loss)
     avg_val_loss /= len(valid_loader.dataset)
     valid_loss.append(avg_val_loss)
@@ -231,7 +253,7 @@ for epoch in range(n_epochs):
 
     f1 = f1_score(val_labels,pred_flat, average='weighted')
     acc = accuracy_score(val_labels,pred_flat)
-    print(f'EPOCH: {epoch+1} \t loss = {avg_loss} \t val_loss = {avg_val_loss} \t Val_ACC = {acc} \t val F1: {f1}')
+    print(f'EPOCH: {epoch+1} \t val_loss = {avg_val_loss} \t Val_ACC = {acc} \t val F1: {f1}')
     #print('Epoch {}/{} \t loss={:.4f} \t val_loss={:.4f}  \t val_acc={:.4f}'.format(epoch + 1, n_epochs, avg_loss, avg_val_loss, val_accuracy))
     #print('Epoch {}/{} \t loss={:.4f} \t val_loss={:.4f}  \t val_acc={:.4f}  \t time={:.2f}s'.format(epoch + 1, n_epochs, avg_loss, avg_val_loss, val_accuracy, elapsed_time))
 
@@ -243,3 +265,4 @@ for epoch in range(n_epochs):
 ################################################################
 # Save the model
 
+#torch.save(model.state_dict(), "saved_models/sent2emo.pt")

@@ -5,7 +5,7 @@ import pickle
 import bcolz
 import numpy as np
 
-glove_path = 'C:/Users/johnn/Downloads/glove.6B'
+glove_path = 'C:/Users/scanloj1/Downloads/glove.6B'
 
 words = []
 idx = 0

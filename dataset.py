@@ -211,7 +211,6 @@ def load_data(input_max, dataset_type):
                 text_item = {"text": item["Utterance"],
                             "label": item["Emotion"]}
                 text_dict[item["id"]].append(text_item)
-        x = 1
 
 
 

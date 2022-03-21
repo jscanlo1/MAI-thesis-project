@@ -303,14 +303,10 @@ if __name__ == '__main__':
     token_type_ids = train_token_type_ids[4]
     label = train_labels[4]
     print(f"Text Tokens: {text}")
-    
     print("Words: " , tokenizer.convert_ids_to_tokens(text))
     print('Mask: ', mask)
     print('Token Type IDs: ', token_type_ids)
     print(f"Label: {label}")
-    
-
-
     exit()
     '''
 

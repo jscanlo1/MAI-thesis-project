@@ -184,31 +184,32 @@ def load_data(input_max, dataset_type):
             t = pickle.load(handle)
 
         #Optional data cleaning stage
-        #text_items = text_items.map(lambda x: cleantext(x))
+        text_items = text_items.map(lambda x: cleantext(x))
 
         #Possibly try and combine into dict
         BERT_text_input = []
-        GLOVE_text_input = []
+        #GLOVE_text_input = []
         truth_label_input = []
+
+        GLOVE_text = t.texts_to_sequences(text_items)
 
         # Tokenise text and labels
         for i, (text,label) in enumerate(zip(text_items,text_labels)):
             #print(f"TEXT: {text} \t LABEL: {label}")
 
             BERT_text = BERT_tokenizer.encode(text)
-            GLOVE_text = t.texts_to_sequences(text)
+            
             _truth_label_input = [vocab.label2id[label]]
 
-
             BERT_text_input.append(BERT_text)
-            GLOVE_text_input.append(GLOVE_text)
+            #GLOVE_text_input.append(GLOVE_text.flatten())
             truth_label_input.append(_truth_label_input)
 
 
 
         #Manual padding
         BERT_text_input = pad_sequences(BERT_text_input, maxlen=128, dtype="long", truncating="post", padding="post")
-        GLOVE_text_input = pad_sequences(GLOVE_text_input, maxlen=128, dtype="long", truncating="post", padding="post")
+        GLOVE_text_input = pad_sequences(GLOVE_text, maxlen=128, dtype="long", truncating="post", padding="post")
         attention_masks = []
 
         # Calculate Sequence Mask for Bert
@@ -228,7 +229,7 @@ def load_data(input_max, dataset_type):
 
 
 
-        return CustomDataset(BERT_text_input, GLOVE_text, truth_label_input, token_type_ids, attention_masks)
+        return CustomDataset(BERT_text_input, GLOVE_text_input, truth_label_input, token_type_ids, attention_masks)
 
     return (
                processing_data(train_path),

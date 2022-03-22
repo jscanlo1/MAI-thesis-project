@@ -36,8 +36,8 @@ from models.sent2emoModel import sent2emoModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
-lr = 5e-5
-#lr = 0.001
+#lr = 5e-5
+lr = 0.0001
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -51,46 +51,6 @@ class Trainer(object):
         
         # self.multi_loss = MultiTaskLoss(2).cuda()
 
-        '''
-
-        param_optimizer = list(model.named_parameters())
-        no_decay = ['bias', 'gamma', 'beta']
-        optimizer_grouped_parameters = [
-            {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
-            'weight_decay_rate': 0.01},
-            {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)],
-            'weight_decay_rate': 0.0}
-        ]
-        '''
-
-        '''
-        self.optimizer = BertAdam(optimizer_grouped_parameters,
-                     lr=2e-5,
-                     warmup=.1)
-        '''
-
-        '''
-        #Params for straightfoward bert models
-        bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params)
-        '''
-
-
-
-        # Set up params for thesis model
-        # Must include provisions for frozen emotion detection model
-
-        #self.model.EmotionModel.parameters().requires_grad = False
-        #self.model.EmotionModel.bias.requires_grad = False
-        '''
-
-        for param in self.model.EmotionModel.parameters():
-            param.requires_grad = False
-
-        bert_params = set(self.model.bert.parameters())
-        emotion_params = set(self.model.EmotionModel.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
-        '''
 
         bert_params = set(self.model.bert.parameters())
         emotion_params = set(self.model.sent2emoModel.parameters())
@@ -235,7 +195,7 @@ class Trainer(object):
 
         f1 = f1_score(labels_flat_array,pred_flat_array, average='weighted')
         acc = accuracy_score(labels_flat_array,pred_flat_array)
-        prec = precision_score(labels_flat_array,pred_flat_array, average='weighted')
+        prec = precision_score(labels_flat_array,pred_flat_array, average='macro')
 
 
         #loss = np.mean(loss_array)
@@ -347,7 +307,7 @@ if __name__ == '__main__':
     #Training
     trainer = Trainer(model,num_batches)
 
-    epochs = 7
+    epochs = 3
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loss = trainer.train(train_dataloader)
@@ -369,7 +329,7 @@ if __name__ == '__main__':
 
 
     #Save models
-    save_path = 'saved_models/thesis_model_with_sent2emo.pt'
+    save_path = 'saved_models/Bert_with_LSTM.pt'
     trainer.save(save_path)
 
     #Load Model

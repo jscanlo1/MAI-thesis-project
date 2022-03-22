@@ -44,10 +44,12 @@ elif dataset_type == 'LIAR':
    test_text_items = test_data.iloc[:,2]
    test_text_labels = test_data.iloc[:,1]
    
+train_final = []
+val_final = []
+test_final = []
 
 
-
-maxlen = 30
+maxlen = 128
 
 print('Tokenizing using dictionary from {}'.format(VOCAB_PATH))
 with open(VOCAB_PATH, 'r') as f:
@@ -69,3 +71,29 @@ print(test_deepMoji)
 torch.save(train_deepMoji,"deepMoji_inputs/AAAI/AAAI_train.pt")
 torch.save(val_deepMoji,"deepMoji_inputs/AAAI/AAAI_val.pt")
 torch.save(test_deepMoji,"deepMoji_inputs/AAAI/AAAI_test.pt")
+
+
+test_stuff = torch.load("deepMoji_inputs/AAAI/AAAI_test.pt")
+print(test_stuff)
+
+
+new_list = val_deepMoji + test_deepMoji
+
+print(new_list.shape)
+print(new_list)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,3 +1,4 @@
+from copyreg import pickle
 import os
 import re
 import torch
@@ -112,7 +113,7 @@ class CustomDataset(Dataset):
 
 
 def load_data(input_max, dataset_type):
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    BERT_tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     
 
     if dataset_type == 'AAAI':
@@ -189,6 +190,9 @@ def load_data(input_max, dataset_type):
         #GLOVE_text_input = []
         truth_label_input = []
 
+        with open('tokenizer.pickle', 'rb') as handle:
+            t = pickle.load(handle)
+            
         GLOVE_text = t.texts_to_sequences(text_items)
 
         # Tokenise text and labels
@@ -210,7 +214,7 @@ def load_data(input_max, dataset_type):
         GLOVE_text_input = pad_sequences(GLOVE_text, maxlen=128, dtype="long", truncating="post", padding="post")
         attention_masks = []
 
-        for seq in text_input:
+        for seq in BERT_text_input:
             seq_mask = [float(i>0) for i in seq]
             attention_masks.append(seq_mask)
 
@@ -218,7 +222,7 @@ def load_data(input_max, dataset_type):
         #
         token_type_ids = []
 
-        for x in text_input:
+        for x in BERT_text_input:
             seq_token_type_id = np.zeros_like(x)
             token_type_ids.append(seq_token_type_id)
 

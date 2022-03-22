@@ -159,92 +159,27 @@ def load_data(input_max, dataset_type):
 
     def processing_data(path):
         
-
-        
         if dataset_type == 'AAAI':
             data = pd.read_excel(path)
-
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["tweet"],
-                            "label": item["label"]}
-                text_dict[i].append(text_item)
+            text_items = data["tweet"]
+            text_labels = data["label"]
 
         elif dataset_type == 'LIAR':
             data = pd.read_csv(path, sep='\t',header=None)
-
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item[2],
-                            "label": item[1]}
-                text_dict[item[0]].append(text_item)
-        
-        elif dataset_type == 'FACEBUZZ':
-            #Include actual red in specific to facebuzz
-            data = pd.read_excel(path)
+            text_items = data.iloc[:,2]
+            text_labels = data.iloc[:,1]
 
         elif dataset_type == 'MELD':
             data = pd.read_csv(path, encoding="utf-8")
+            text_items = data["Utterance"]
+            text_labels = data["Emotion"]
 
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["Utterance"],
-                            "label": item["Emotion"]}
-                text_dict[i].append(text_item)
-
-        elif dataset_type == 'TSA':
-            data = pd.read_csv(path, header=None ,encoding="utf-8")
-            data[3].fillna('', inplace = True)
-
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item[3],
-                            "label": item[2]}
-                text_dict[i].append(text_item)
-        
 
         else:
-            #Default is AAAI for now
-            data = pd.read_excel(path)
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["Utterance"],
-                            "label": item["Emotion"]}
-                text_dict[item["id"]].append(text_item)
+            print("INVALID DATASET TYPE")
+            exit()
 
 
-
-
-
-        
-        #Optional data cleaning stage
-        #data['tweet'] = data['tweet'].map(lambda x: cleantext(x))
-
-        
-        #Check that data is read in ok
-        #print(data.head())
-
-
-        #Possibly rethink how this data is read
-        #Over complicated perhaps
-        '''
-
-        text_dict = defaultdict(list)
-        for i, item in data.iterrows():
-            text_item = {"text": item["tweet"],
-                        "label": item["label"]}
-            text_dict[item["id"]].append(text_item)
-        '''
-
-               
-        #Sanity check print out some values
-        
-        for i in range(5):
-            first_key = list(text_dict)[i]
-            first_val = list(text_dict.values())[i]
-            print(f'Text: {first_val}' )
-
-        print('Dataset size ', len(text_dict))
         
        
 
@@ -267,6 +202,7 @@ def load_data(input_max, dataset_type):
 
             text_input.append(_text_input)
             truth_label_input.append(_truth_label_input)
+            
         
         text_input = pad_sequences(text_input, maxlen=128, dtype="long", truncating="post", padding="post")
         attention_masks = []

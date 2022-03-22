@@ -188,18 +188,16 @@ def load_data(input_max, dataset_type):
 
 
         
-        for text_item in text_dict.values():
+        # Tokenise text and labels
+        for i, (text,label) in enumerate(zip(text_items,text_labels)):
+            #print(f"TEXT: {text} \t LABEL: {label}")
 
-            #print(text_item)
-            #print(text_item[0]['text'])
+            BERT_text = tokenizer.encode(text)
             
-            _text_input = tokenizer.encode(text_item[0]['text'], add_special_tokens=True)
+            _truth_label_input = [vocab.label2id[label]]
 
-
-
-            _truth_label_input = [vocab.label2id[text_item[0]['label']]]
-
-            text_input.append(_text_input)
+            text_input.append(BERT_text)
+            #GLOVE_text_input.append(GLOVE_text.flatten())
             truth_label_input.append(_truth_label_input)
         
         text_input = pad_sequences(text_input, maxlen=128, dtype="long", truncating="post", padding="post")

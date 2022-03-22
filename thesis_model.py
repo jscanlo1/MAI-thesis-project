@@ -213,7 +213,7 @@ class Trainer(object):
         #print("Labels: ", labels_flat_array[0])
         #print("Preds: ", pred_flat_array[0])
 
-        f1 = f1_score(labels_flat_array,pred_flat_array, average='weighted')
+        f1 = f1_score(labels_flat_array,pred_flat_array, average='macro')
         acc = accuracy_score(labels_flat_array,pred_flat_array)
         prec = precision_score(labels_flat_array,pred_flat_array, average='weighted')
 
@@ -372,7 +372,7 @@ if __name__ == '__main__':
 
 
     #Save models
-    save_path = 'saved_models/thesis_model_with_emotion.pt'
+    save_path = 'saved_models/LIAR_BERT.pt'
 
     trainer.save(save_path)
 

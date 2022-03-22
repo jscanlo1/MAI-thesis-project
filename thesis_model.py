@@ -28,7 +28,7 @@ from sklearn.metrics import f1_score,precision_score,accuracy_score
 
 #from nltk.corpus import stopwords
 #from sklearn.preprocessing import LabelEncoder
-from transformers import AdamW
+from transformers import AdamW 
 from transformers.optimization import get_linear_schedule_with_warmup
 from models.FakeNewsModel import FakeNewsModel
 from models.EmotionDetectionModel import EmotionDetectionModel
@@ -50,9 +50,8 @@ class Trainer(object):
 
         self.loss_fn = nn.CrossEntropyLoss()
 
-        
         # Set up params for thesis model
-
+        # Must include provisions for frozen emotion detection model
 
         #self.model.EmotionModel.parameters().requires_grad = False
         #self.model.EmotionModel.bias.requires_grad = False
@@ -104,31 +103,11 @@ class Trainer(object):
             train_token_type_ids = train_token_type_ids.to(device)
             truth_label = truth_label.to(device)
 
-            
-            # Compute prediction and loss
-            
-            '''
-            #This model uses a pretrained classification so some changes mayu be necessary
-            truth_output = self.model(BERT_train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
-            loss = truth_output.loss
-            
-            
-            #print("Loss Item: ",loss.item())
-            '''
-            
-            
+
             #This uses custom models
             truth_output = self.model(BERT_train_features,emoji_Train_Features, token_type_ids=None, attention_mask=train_mask)
             loss = self.loss_fn(truth_output ,truth_label.flatten())
             
-
-            '''
-            Check waht is being output
-            print("Prediction: ", truth_output)
-            print("Prediction Size: ", truth_output.size())
-            print("Actual Label: ", truth_label.flatten())
-            print("Actual Label Size: ", truth_label.flatten().size())
-            '''
 
             # Backpropagation
             self.model.zero_grad()

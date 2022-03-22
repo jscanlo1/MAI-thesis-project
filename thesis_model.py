@@ -5,6 +5,7 @@ import string
 import torch
 import dataset
 import argparse
+import pickle
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -31,6 +32,7 @@ from transformers import AdamW
 from transformers.optimization import get_linear_schedule_with_warmup
 from models.FakeNewsModel import FakeNewsModel
 from models.EmotionDetectionModel import EmotionDetectionModel
+from models.sent2emoModel import sent2emoModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
@@ -91,7 +93,8 @@ class Trainer(object):
         '''
 
         bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params)
+        emotion_params = set(self.model.sent2emoModel.parameters())
+        other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
 
         no_decay = ['bias', 'LayerNorm.weight']
 
@@ -102,6 +105,12 @@ class Trainer(object):
             'lr': bert_lr,
             'weight_decay': 0.01},
             {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
+            'lr': bert_lr,
+            'weight_decay_rate': 0.0},
+            {'params': [p for n, p in model.sent2emoModel.named_parameters() if not any(nd in n for nd in no_decay)],
+            'lr': bert_lr,
+            'weight_decay': 0.01},
+            {'params': [p for n, p in model.sent2emoModel.named_parameters() if any(nd in n for nd in no_decay)],
             'lr': bert_lr,
             'weight_decay_rate': 0.0},
             {'params': other_params,
@@ -121,8 +130,9 @@ class Trainer(object):
 
         loss_array = []
 
-        for batch, (train_features, train_mask , train_token_type_ids, truth_label) in enumerate(data_loader):
-            train_features = train_features.to(device)
+        for batch, (BERT_train_features, GLOVE_Train_Features ,train_mask , train_token_type_ids, truth_label) in enumerate(data_loader):
+            BERT_train_features = BERT_train_features.to(device)
+            GLOVE_Train_Features = GLOVE_Train_Features.to(device)
             train_mask = train_mask.to(device)
             train_token_type_ids = train_token_type_ids.to(device)
             truth_label = truth_label.to(device)
@@ -132,7 +142,7 @@ class Trainer(object):
             
             '''
             #This model uses a pretrained classification so some changes mayu be necessary
-            truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
+            truth_output = self.model(BERT_train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
             loss = truth_output.loss
             
             
@@ -141,7 +151,7 @@ class Trainer(object):
             
             
             #This uses custom models
-            truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask)
+            truth_output = self.model(BERT_train_features,GLOVE_Train_Features, token_type_ids=None, attention_mask=train_mask)
             loss = self.loss_fn(truth_output ,truth_label.flatten())
             
 
@@ -164,7 +174,7 @@ class Trainer(object):
             loss_array.append(loss.item())
 
             if batch % 20 == 0:
-                loss, current = loss.item(), batch * len(train_features)
+                loss, current = loss.item(), batch * len(BERT_train_features)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
         self.scheduler.step()
         loss = np.mean(loss_array)
@@ -181,8 +191,9 @@ class Trainer(object):
         test_loss, correct = 0, 0
 
         with torch.no_grad():
-            for train_features, train_mask , train_token_type_ids, truth_label in data_loader:
-                train_features = train_features.to(device)
+            for BERT_train_features, GLOVE_Train_Features, train_mask , train_token_type_ids, truth_label in data_loader:
+                BERT_train_features = BERT_train_features.to(device)
+                GLOVE_Train_Features = GLOVE_Train_Features.to(device)
                 train_mask = train_mask.to(device)
                 train_token_type_ids = train_token_type_ids.to(device)
                 truth_label = truth_label.to(device)
@@ -191,13 +202,13 @@ class Trainer(object):
                 '''
                 #BertForsSequencyClassification
 
-                truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
+                truth_output = self.model(BERT_train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
                 test_loss += truth_output.loss.item()
                 logits = truth_output.logits.detach().cpu().numpy()
                 '''
                 
                 #Custom Models
-                truth_output = self.model(train_features, token_type_ids=None, attention_mask=train_mask)
+                truth_output = self.model(BERT_train_features, GLOVE_Train_Features, token_type_ids=None, attention_mask=train_mask)
                 test_loss += self.loss_fn(truth_output ,truth_label.flatten())
                 logits = truth_output.detach().cpu().numpy()
                 
@@ -250,9 +261,6 @@ class Trainer(object):
 
 
 if __name__ == '__main__':
-    
-
-    
 
     dataset_type = 'LIAR'
 
@@ -264,6 +272,8 @@ if __name__ == '__main__':
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+
+
     torch.cuda.device(1)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -283,12 +293,12 @@ if __name__ == '__main__':
 
     '''
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    train_features, train_mask , train_token_type_ids,train_labels = next(itertools.islice(train_dataloader, 0, None))
-    print(f"Feature batch shape: {train_features.size()}")
+    BERT_train_features, train_mask , train_token_type_ids,train_labels = next(itertools.islice(train_dataloader, 0, None))
+    print(f"Feature batch shape: {BERT_train_features.size()}")
     print(f'Feature mask shape: {train_mask.size()}' )
     print(f'Feature token type ids shape: {train_token_type_ids.size()}' )
     print(f"Labels batch shape: {train_labels.size()}")
-    text = train_features[4]
+    text = BERT_train_features[4]
     mask = train_mask[4]
     token_type_ids = train_token_type_ids[4]
     label = train_labels[4]
@@ -310,19 +320,26 @@ if __name__ == '__main__':
     #Create Full fake news model
 
 
-    '''
+    
     # Set up emotion model
+    with open("tokenizer.pickle", "rb") as handle:
+            t = pickle.load(handle)
 
-    emotion_model_path = 'saved_models/emotion_model.pt'
-    EmotionModel = EmotionDetectionModel(num_labels=7).to(device)
-    EmotionModel.load_state_dict(torch.load(emotion_model_path))
-    EmotionModel.eval()
-    model = FakeNewsModel(num_labels,EmotionModel).to(device)
-    '''
+    matrix_len = len(t.word_index) + 1
+
+    
+    embedding_matrix = torch.load("glove/embedding_matrix.pt")
+
+    emotion_model_path = 'saved_models/sent2emo.pt'
+    sent2emoModel = sent2emoModel(embedding_matrix=embedding_matrix,max_features = matrix_len ,num_labels=7).to(device)
+    sent2emoModel.load_state_dict(torch.load(emotion_model_path))
+    sent2emoModel.eval()
+    model = FakeNewsModel(num_labels,sent2emoModel).to(device)
+    
     
     #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
 
-    model = EmotionDetectionModel(num_labels=num_labels).to(device)
+    #model = EmotionDetectionModel(num_labels=num_labels).to(device)
     # print(model)
 
     torch.cuda.memory_summary(device=None, abbreviated=False)
@@ -330,7 +347,7 @@ if __name__ == '__main__':
     #Training
     trainer = Trainer(model,num_batches)
 
-    epochs = 3
+    epochs = 7
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loss = trainer.train(train_dataloader)
@@ -352,7 +369,7 @@ if __name__ == '__main__':
 
 
     #Save models
-    save_path = 'saved_models/thesis_model_with_LSTM_FINAL.pt'
+    save_path = 'saved_models/thesis_model_with_sent2emo.pt'
     trainer.save(save_path)
 
     #Load Model

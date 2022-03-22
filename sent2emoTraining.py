@@ -95,7 +95,8 @@ for text_ in train_text:
 
 
 
-t = Tokenizer(oov_token=1)
+#t = Tokenizer(oov_token=1)
+t = Tokenizer()
 t.fit_on_texts(list(train_text) + list(val_text))
 vocab_size = len(t.word_index) + 1
 encoded_train = t.texts_to_sequences(train_text)
@@ -147,6 +148,8 @@ for i, word in enumerate(dataset_vocab):
 num_labels = vocab_.num_labels()
 
 embedding_matrix = torch.tensor(embedding_matrix)
+
+torch.save(embedding_matrix,"glove/embedding_matrix.pt")
 #print(np.shape(x_data))
 
 
@@ -166,13 +169,13 @@ val_text = padded_val
 #######################################################
 # Set up training
 
-n_epochs = 6
+n_epochs = 5
 model = sent2emoModel(embedding_matrix=embedding_matrix,max_features = matrix_len ,num_labels=num_labels)
 loss_fn = nn.CrossEntropyLoss(reduction='sum')
-optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.001, betas= [0.9,0.999])
+optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()), lr=0.0005, betas= [0.9,0.999])
 #model.cuda()
 
-batch_size = 32
+batch_size = 16
 # Load train and test in CUDA Memory
 #Set these to CUDA with .cuda()
 #print(train_text[0])
@@ -226,7 +229,7 @@ for epoch in range(n_epochs):
 
     train_acc = accuracy_score(train_label_gold, train_label_pred)
     train_f1 = f1_score(train_label_gold, train_label_pred, average='weighted')
-    print(f"EPOCH: {epoch+1} \t Train Loss: {avg_loss} \t Train Acc: {train_acc} \t val F1: {train_f1}")
+    print(f"EPOCH: {epoch+1} \t Train Loss: {avg_loss} \t Train Acc: {train_acc} \t Train F1: {train_f1}")
 
 
     model.eval()        

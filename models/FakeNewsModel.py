@@ -7,10 +7,10 @@ from transformers import BertModel
 
 
 class FakeNewsModel(nn.Module):
-    def __init__(self,num_labels, sent2emoModel ):
+    def __init__(self,num_labels):
         super(FakeNewsModel, self).__init__()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
-        self.sent2emoModel = sent2emoModel
+        #self.deepMoji_model = deepMoji_model
 
         self.bert_output_layer = nn.Sequential(
             nn.Dropout(0.4),
@@ -22,7 +22,7 @@ class FakeNewsModel(nn.Module):
         self.label_output_layer = nn.Sequential(
             #Possibly Exclude first two lines
             nn.Dropout(0.2),
-            nn.Linear(num_labels+7,num_labels),
+            nn.Linear(num_labels+64,num_labels),
             #nn.ReLU(),
             
             #nn.Linear(num_labels,num_labels)
@@ -30,16 +30,18 @@ class FakeNewsModel(nn.Module):
 
 
 
-    def forward(self, text_input,GLOVE_text,token_type_ids,attention_mask):
-
+    def forward(self, text_input,emoji_Input,token_type_ids,attention_mask):
+        print(text_input.shape)
+        print(emoji_Input.shape)
+        #print(emoji_Input)
+        bert_output = self.bert(input_ids = text_input, attention_mask  = attention_mask)
+        #print(bert_output)
+        #emotion_output = self.deepMoji_model(emoji_Input)
         
 
-        bert_output = self.bert(input_ids = text_input, attention_mask  = attention_mask)
-        emotion_output = self.sent2emoModel(GLOVE_text)
-
         bert_emotion_output = self.bert_output_layer(bert_output.pooler_output)
-
-        output = torch.cat((bert_emotion_output, emotion_output), dim=1)
+        print(bert_emotion_output.shape)
+        output = torch.cat((bert_emotion_output, emoji_Input), dim=1)
 
         #bert_outputs = torch.cat(bert_outputs, dim=1)
         

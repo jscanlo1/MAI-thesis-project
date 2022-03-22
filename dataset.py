@@ -1,6 +1,7 @@
 import os
 import re
 import torch
+import json
 import numpy as np
 from transformers import BertTokenizer
 from torch.utils.data import Dataset
@@ -9,6 +10,9 @@ import pandas as pd
 from collections import defaultdict
 from keras.preprocessing.sequence import pad_sequences
 from nltk.corpus import stopwords
+from torchMoji.torchmoji.sentence_tokenizer import SentenceTokenizer
+from torchMoji.torchmoji.model_def import torchmoji_emojis
+from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
 
 
@@ -78,12 +82,12 @@ class Vocabulary_TSA(object):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, text, truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):
+    def __init__(self, text, deepMoji_input ,truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):
         self.text = text
         self.truth_labels = truth_labels
         self.attention_masks = attention_masks
         self.token_type_ids = token_type_ids
-
+        self.deepMoji_input = deepMoji_input
         #Dunno what transforms are
         self.transform = transform
         self.target_transform = target_transform
@@ -105,7 +109,7 @@ class CustomDataset(Dataset):
             #Potentially move conversion to tensors to init
             #
 
-        return torch.LongTensor(text_item), torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
+        return torch.LongTensor(text_item), torch.LongTensor(self.deepMoji_input) ,torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
 
 
 
@@ -180,27 +184,31 @@ def load_data(input_max, dataset_type):
             exit()
 
 
-        
-       
+        #Handles deepMoji inputs
 
-        #Possibly try and combine into dict
+        maxlen = 128
+
+        print('Tokenizing using dictionary from {}'.format(VOCAB_PATH))
+        with open(VOCAB_PATH, 'r') as f:
+            vocabulary = json.load(f)
+
+        print('Loading model from {}.'.format(PRETRAINED_PATH))
+        model = torchmoji_emojis(PRETRAINED_PATH)
+
+        st = SentenceTokenizer(vocabulary, maxlen)
+        tokenized, _, _ = st.tokenize_sentences(text_items)
+        deepMoji_inputs = model(tokenized)
+
+        
+        #Handles Bert inputes
         text_input = []
         truth_label_input = []
 
-
         
-        for text_item in text_dict.values():
-
-            #print(text_item)
-            #print(text_item[0]['text'])
-            
-            _text_input = tokenizer.encode(text_item[0]['text'], add_special_tokens=True)
-
-
-
-            _truth_label_input = [vocab.label2id[text_item[0]['label']]]
-
-            text_input.append(_text_input)
+        for i, (text,label) in enumerate(zip(text_items,text_labels)):
+            BERT_text = tokenizer.encode(text)
+            _truth_label_input = [vocab.label2id[label]]
+            text_input.append(BERT_text)
             truth_label_input.append(_truth_label_input)
             
         
@@ -220,7 +228,7 @@ def load_data(input_max, dataset_type):
             token_type_ids.append(seq_token_type_id)
 
 
-        return CustomDataset(text_input, truth_label_input, token_type_ids, attention_masks)
+        return CustomDataset(text_input,deepMoji_inputs, truth_label_input, token_type_ids, attention_masks)
 
     return (
                processing_data(train_path),

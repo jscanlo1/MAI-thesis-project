@@ -181,26 +181,33 @@ def load_data(input_max, dataset_type):
 
 
 
+        #Optional data cleaning stage
+        text_items = text_items.map(lambda x: cleantext(x))
 
         #Possibly try and combine into dict
-        text_input = []
+        BERT_text_input = []
+        #GLOVE_text_input = []
         truth_label_input = []
 
+        GLOVE_text = t.texts_to_sequences(text_items)
 
         # Tokenise text and labels
         for i, (text,label) in enumerate(zip(text_items,text_labels)):
             #print(f"TEXT: {text} \t LABEL: {label}")
 
-            BERT_text = tokenizer.encode(text)
+            BERT_text = BERT_tokenizer.encode(text)
             
             _truth_label_input = [vocab.label2id[label]]
 
-            text_input.append(BERT_text)
+            BERT_text_input.append(BERT_text)
             #GLOVE_text_input.append(GLOVE_text.flatten())
             truth_label_input.append(_truth_label_input)
 
-        
-        text_input = pad_sequences(text_input, maxlen=128, dtype="long", truncating="post", padding="post")
+
+
+        #Manual padding
+        BERT_text_input = pad_sequences(BERT_text_input, maxlen=128, dtype="long", truncating="post", padding="post")
+        GLOVE_text_input = pad_sequences(GLOVE_text, maxlen=128, dtype="long", truncating="post", padding="post")
         attention_masks = []
 
         for seq in text_input:
@@ -216,7 +223,12 @@ def load_data(input_max, dataset_type):
             token_type_ids.append(seq_token_type_id)
 
 
-        return CustomDataset(text_input, truth_label_input, token_type_ids, attention_masks)
+
+        
+
+
+
+        return CustomDataset(BERT_text_input, GLOVE_text_input, truth_label_input, token_type_ids, attention_masks)
 
     return (
                processing_data(train_path),

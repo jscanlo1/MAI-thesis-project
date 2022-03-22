@@ -77,10 +77,10 @@ test_stuff = torch.load("deepMoji_inputs/AAAI/AAAI_test.pt")
 print(test_stuff)
 
 
-new_list = val_deepMoji + test_deepMoji
+#new_list = val_deepMoji + test_deepMoji
 
-print(new_list.shape)
-print(new_list)
+#print(new_list.shape)
+#print(new_list)
 
 
 

@@ -114,7 +114,7 @@ class CustomDataset(Dataset):
 
 
 
-
+#datasettypetype refers to train test val
 def load_data(input_max, dataset_type):
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     
@@ -161,17 +161,33 @@ def load_data(input_max, dataset_type):
         test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
 
 
-    def processing_data(path):
+    def processing_data(path, dataset_type_type):
         
         if dataset_type == 'AAAI':
             data = pd.read_excel(path)
             text_items = data["tweet"]
             text_labels = data["label"]
 
+            if dataset_type_type == 'train':
+                deepMoji_inputs = torch.load("deepMoji_inputs/AAAI/AAAI_train.pt")
+            elif dataset_type_type == 'val':
+                deepMoji_inputs = torch.load("deepMoji_inputs/AAAI/AAAI_val.pt")
+            elif dataset_type_type == 'test':
+                deepMoji_inputs = torch.load("deepMoji_inputs/AAAI/AAAI_test.pt")
+
+
         elif dataset_type == 'LIAR':
             data = pd.read_csv(path, sep='\t',header=None)
             text_items = data.iloc[:,2]
             text_labels = data.iloc[:,1]
+
+            if dataset_type_type == 'train':
+                deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_train.pt")
+            elif dataset_type_type == 'val':
+                deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_val.pt")
+            elif dataset_type_type == 'test':
+                deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_test.pt")
+
 
         elif dataset_type == 'MELD':
             data = pd.read_csv(path, encoding="utf-8")
@@ -186,30 +202,24 @@ def load_data(input_max, dataset_type):
 
         #Handles deepMoji inputs
 
-        maxlen = 128
-
-        print('Tokenizing using dictionary from {}'.format(VOCAB_PATH))
-        with open(VOCAB_PATH, 'r') as f:
-            vocabulary = json.load(f)
-
-        print('Loading model from {}.'.format(PRETRAINED_PATH))
-        model = torchmoji_emojis(PRETRAINED_PATH)
-
-        st = SentenceTokenizer(vocabulary, maxlen)
-        tokenized, _, _ = st.tokenize_sentences(text_items)
-        deepMoji_inputs = model(tokenized)
+        emo_results = np.array(deepMoji_inputs)
+        
 
         
         #Handles Bert inputes
         text_input = []
         truth_label_input = []
-
+        #emo_results = []
         
-        for i, (text,label) in enumerate(zip(text_items,text_labels)):
+        for i, (text,label,emoji_probs) in enumerate(zip(text_items,text_labels,deepMoji_inputs)):
+            #print(emoji_probs)
             BERT_text = tokenizer.encode(text)
             _truth_label_input = [vocab.label2id[label]]
             text_input.append(BERT_text)
             truth_label_input.append(_truth_label_input)
+
+            #_emo_probs = [x for x in emoji_probs]
+            #emo_results.append(_emo_probs)
             
         
         text_input = pad_sequences(text_input, maxlen=128, dtype="long", truncating="post", padding="post")
@@ -227,11 +237,15 @@ def load_data(input_max, dataset_type):
             seq_token_type_id = np.zeros_like(x)
             token_type_ids.append(seq_token_type_id)
 
+        #print(emo_results)
+        print(emo_results)
+        print(emo_results.shape)
 
-        return CustomDataset(text_input,deepMoji_inputs, truth_label_input, token_type_ids, attention_masks)
+
+        return CustomDataset(text_input, emo_results, truth_label_input, token_type_ids, attention_masks)
 
     return (
-               processing_data(train_path),
-               processing_data(val_path),
-               processing_data(test_path)
+               processing_data(train_path,'train'),
+               processing_data(val_path, 'val'),
+               processing_data(test_path, 'test')
            ), vocab

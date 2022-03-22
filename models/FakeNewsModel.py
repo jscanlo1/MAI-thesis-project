@@ -34,6 +34,7 @@ class FakeNewsModel(nn.Module):
         print(text_input.shape)
         print(emoji_Input.shape)
         #print(emoji_Input)
+        #print(emoji_Input)
         bert_output = self.bert(input_ids = text_input, attention_mask  = attention_mask)
         #print(bert_output)
         #emotion_output = self.deepMoji_model(emoji_Input)

@@ -233,18 +233,7 @@ def load_data(input_max, dataset_type):
             text_item = {"text": item["tweet"],
                         "label": item["label"]}
             text_dict[item["id"]].append(text_item)
-        '''
-
-               
-        #Sanity check print out some values
-        
-        for i in range(5):
-            first_key = list(text_dict)[i]
-            first_val = list(text_dict.values())[i]
-            print(f'Text: {first_val}' )
-
-        print('Dataset size ', len(text_dict))
-        
+        '''        
        
 
         #Possibly try and combine into dict

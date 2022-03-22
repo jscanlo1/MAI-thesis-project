@@ -1,4 +1,3 @@
-
 import os
 import random
 import string
@@ -6,29 +5,21 @@ from turtle import shape
 import torch
 import dataset
 import argparse
-
 import numpy as np
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
 import itertools
-
 import pandas as pd
 #import matplotlib.pyplot as plt
-
 from transformers import BertTokenizer
 from transformers import BertForSequenceClassification
 import torch.nn as nn
 import torch.optim as optim
-
 #Import some libraries for calculating metrics
 from sklearn.metrics import f1_score,precision_score,accuracy_score
-
-
 #from nltk.corpus import stopwords
 #from sklearn.preprocessing import LabelEncoder
-
 from models.FakeNewsModel import FakeNewsModel
 from models.EmotionDetectionModel import EmotionDetectionModel
 
@@ -78,22 +69,12 @@ class Trainer(object):
         # Set up params for thesis model
         # Must include provisions for frozen emotion detection model
 
-        #self.model.EmotionModel.parameters().requires_grad = False
-        #self.model.EmotionModel.bias.requires_grad = False
-        
-
-        for param in self.model.EmotionModel.parameters():
-            param.requires_grad = False
-
-        bert_params = set(self.model.bert.parameters())
-        emotion_params = set(self.model.EmotionModel.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
         
  
         
 
-        #bert_params = set(self.model.bert.parameters())
-        #other_params = list(set(self.model.parameters()) - bert_params)
+        bert_params = set(self.model.bert.parameters())
+        other_params = list(set(self.model.parameters()) - bert_params)
 
         no_decay = ['bias', 'LayerNorm.weight']
 

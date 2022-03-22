@@ -316,27 +316,21 @@ if __name__ == '__main__':
     #Create Full fake news model
 
 
-    
+    '''
     # Set up emotion model
     with open("tokenizer.pickle", "rb") as handle:
             t = pickle.load(handle)
-
     matrix_len = len(t.word_index) + 1
-
-    
     embedding_matrix = torch.load("glove/embedding_matrix.pt")
-
     emotion_model_path = 'saved_models/sent2emo.pt'
     sent2emoModel = sent2emoModel(embedding_matrix=embedding_matrix,max_features = matrix_len ,num_labels=7).to(device)
     sent2emoModel.load_state_dict(torch.load(emotion_model_path))
     sent2emoModel.eval()
-    model = FakeNewsModel(num_labels,sent2emoModel).to(device)
-    
-    
-    #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)
+    '''
+    deepMoji_model = deepMoji_model
+    deepMoji_model.load_state_dict(torch.load(''))
 
-    #model = EmotionDetectionModel(num_labels=num_labels).to(device)
-    # print(model)
+    model = FakeNewsModel(num_labels,sent2emoModel).to(device)
 
     torch.cuda.memory_summary(device=None, abbreviated=False)
 
@@ -365,7 +359,7 @@ if __name__ == '__main__':
 
 
     #Save models
-    save_path = 'saved_models/thesis_model_with_sent2emo.pt'
+    save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'
     trainer.save(save_path)
 
     #Load Model

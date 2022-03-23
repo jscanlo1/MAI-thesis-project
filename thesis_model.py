@@ -26,7 +26,7 @@ from models.FakeNewsModel import FakeNewsModel
 bert_lr = 1e-5
 weight_decay = 1e-5
 lr = 5e-5
-#lr = 0.001
+#lr = 0.0001
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -85,7 +85,7 @@ class Trainer(object):
 
         for batch, (BERT_train_features, emoji_Train_Features ,train_mask , train_token_type_ids, truth_label) in enumerate(data_loader):
             BERT_train_features = BERT_train_features.to(device)
-            emoji_Train_Features = emoji_Train_Features.to(device)
+            emoji_Train_Features = emoji_Train_Features.to(device).float()
             train_mask = train_mask.to(device)
             train_token_type_ids = train_token_type_ids.to(device)
             truth_label = truth_label.to(device)
@@ -126,7 +126,7 @@ class Trainer(object):
         with torch.no_grad():
             for BERT_train_features, emoji_Train_Features, train_mask , train_token_type_ids, truth_label in data_loader:
                 BERT_train_features = BERT_train_features.to(device)
-                emoji_Train_Features = emoji_Train_Features.to(device)
+                emoji_Train_Features = emoji_Train_Features.to(device).float()
                 train_mask = train_mask.to(device)
                 train_token_type_ids = train_token_type_ids.to(device)
                 truth_label = truth_label.to(device)
@@ -141,7 +141,7 @@ class Trainer(object):
 
 
                 pred_flat = np.argmax(logits, axis=1).flatten()
-                labels_flat = truth_label.to('cpu').numpy()
+                labels_flat = truth_label.to('cpu').cpu().numpy()
                 #labels_flat = truth_label.numpy().flatten()
 
                 correct += np.sum(pred_flat == labels_flat)
@@ -192,13 +192,14 @@ if __name__ == '__main__':
     writer = SummaryWriter()
     torch.cuda.empty_cache()
 
-    '''
-    seed = 123
+    
+    #seed = 123
+    seed = 111
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    '''
+    
 
 
     torch.cuda.device(1)
@@ -243,15 +244,19 @@ if __name__ == '__main__':
     #Training
     trainer = Trainer(model,num_batches)
 
-    epochs = 3
+    epochs = 10
+    
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loss = trainer.train(train_dataloader)
         print("Epoch: {}     Train Loss: {:.8f} ".format(t+1, train_loss))
         dev_loss, dev_acc, dev_prec, dev_F1 = trainer.eval(val_dataloader)
         print("Epoch: {}     Dev Loss: {:.8f}     Dev Acc: {:.4f}     Dev Prec {:.4f}     Dev F1 {:.4f}".format(t+1, dev_loss, dev_acc, dev_prec, dev_F1))
+        test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
 
-        writer.add_scalars('Training Vs validation Loss',{'Training':train_loss, 'Validation': dev_loss, }, t+1)
+        writer.add_scalars('Training Vs validation Vs test Loss',{'Training':train_loss, 'Validation': dev_loss, 'Test': test_loss }, t+1)
+        writer.add_scalars('Val Vs Test acc',{'Validation': dev_acc, 'Test': test_acc }, t+1)
+        writer.add_scalars('Val Vs Test F1',{'Validation': dev_F1, 'Test': test_F1 }, t+1)
         
         print("---------------------------------")
     
@@ -265,8 +270,10 @@ if __name__ == '__main__':
 
     print(model.label_output_layer[1].weight)
 
+    np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
+
     #Save models
-    save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'
+    save_path = 'saved_models/AAAI_BERT_with_deepMoji.pt'
     trainer.save(save_path)
 
     #Load Model

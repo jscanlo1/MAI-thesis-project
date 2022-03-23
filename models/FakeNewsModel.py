@@ -14,11 +14,15 @@ class FakeNewsModel(nn.Module):
         #64 emojis
         self.relu = nn.ReLU()
 
+        self.emo_layer = nn.Sequential(
+            nn.Linear(64,6)
+        )
+
         self.label_output_layer = nn.Sequential(
             #Possibly Exclude first two lines
             nn.Dropout(0.1),
-            nn.Linear(768 + 64,num_labels),
-            #nn.ReLU(),
+            nn.Linear(768 + 6,num_labels),
+            nn.ReLU()
             
             #nn.Linear(num_labels,num_labels)
         )
@@ -27,7 +31,8 @@ class FakeNewsModel(nn.Module):
 
     def forward(self, text_input,emoji_Input,token_type_ids,attention_mask):
         bert_output = self.bert(input_ids = text_input, attention_mask  = attention_mask)
-        output = torch.cat((bert_output.pooler_output, emoji_Input), dim=1)
+        emoji_output = self.emo_layer(emoji_Input)
+        output = torch.cat((bert_output.pooler_output, emoji_output), dim=1)
 
         label_output = self.label_output_layer(output)
         

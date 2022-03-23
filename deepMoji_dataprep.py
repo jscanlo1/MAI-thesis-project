@@ -29,6 +29,11 @@ dataset_type = 'LIAR'
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
+def top_elements(array, k):
+    ind = np.argpartition(array, -k)[-k:]
+    return ind[np.argsort(array[ind])][::-1]
+
+
 if dataset_type == 'AAAI':
     train_data = pd.read_excel(train_path)
     val_data = pd.read_excel(val_path)
@@ -58,7 +63,7 @@ val_final = []
 test_final = []
 
 
-maxlen = 128
+maxlen = 30
 
 print('Tokenizing using dictionary from {}'.format(VOCAB_PATH))
 with open(VOCAB_PATH, 'r') as f:
@@ -77,6 +82,13 @@ for group in chunker(train_text_items, 100):
 
 train_deepMoji = np.stack(train_deepMoji,axis=0)
 
+max_train_deepMoji = []
+for x in train_deepMoji:
+    one_ind = top_elements(x,5)
+    new_array = np.zeros(64)
+    new_array[one_ind] = 1
+    max_train_deepMoji.append(new_array)
+max_train_deepMoji = np.stack(max_train_deepMoji,axis=0)
 
 val_deepMoji = []
 for group in chunker(val_text_items, 100):
@@ -86,6 +98,14 @@ for group in chunker(val_text_items, 100):
 
 val_deepMoji = np.stack(val_deepMoji,axis=0)
 
+max_val_deepMoji = []
+for x in val_deepMoji:
+    one_ind = top_elements(x,5)
+    new_array = np.zeros(64)
+    new_array[one_ind] = 1
+    max_val_deepMoji.append(new_array)
+max_val_deepMoji = np.stack(max_val_deepMoji,axis=0)
+
 test_deepMoji = []
 for group in chunker(test_text_items, 100):
     test_tokenized, _, _ = st.tokenize_sentences(group)
@@ -94,12 +114,25 @@ for group in chunker(test_text_items, 100):
 
 test_deepMoji = np.stack(test_deepMoji,axis=0)
 
+max_test_deepMoji = []
+for x in test_deepMoji:
+    one_ind = top_elements(x,5)
+    new_array = np.zeros(64)
+    new_array[one_ind] = 1
+    max_test_deepMoji.append(new_array)
+max_test_deepMoji = np.stack(max_test_deepMoji,axis=0)
+
 
 torch.save(train_deepMoji,"deepMoji_inputs/LIAR/LIAR_train.pt")
 torch.save(val_deepMoji,"deepMoji_inputs/LIAR/LIAR_val.pt")
 torch.save(test_deepMoji,"deepMoji_inputs/LIAR/LIAR_test.pt")
 
+'''
+torch.save(max_train_deepMoji,"deepMoji_inputs/LIAR/LIAR_train.pt")
+torch.save(max_val_deepMoji,"deepMoji_inputs/LIAR/LIAR_val.pt")
+torch.save(max_test_deepMoji,"deepMoji_inputs/LIAR/LIAR_test.pt")
 
+'''
 
 
 

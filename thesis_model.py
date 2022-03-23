@@ -192,11 +192,13 @@ if __name__ == '__main__':
     writer = SummaryWriter()
     torch.cuda.empty_cache()
 
+    '''
     seed = 123
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+    '''
 
 
     torch.cuda.device(1)
@@ -234,6 +236,7 @@ if __name__ == '__main__':
     '''
 
     model = FakeNewsModel(num_labels).to(device)
+    print(model)
 
     torch.cuda.memory_summary(device=None, abbreviated=False)
 
@@ -260,9 +263,10 @@ if __name__ == '__main__':
     test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
     print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
 
+    print(model.label_output_layer[1].weight)
 
     #Save models
-    save_path = 'saved_models/AAAI_BERT_with_deepMoji.pt'
+    save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'
     trainer.save(save_path)
 
     #Load Model

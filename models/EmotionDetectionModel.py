@@ -8,8 +8,6 @@ class EmotionDetectionModel(nn.Module):
         super(EmotionDetectionModel, self).__init__()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
         
-        self.lstm = nn.LSTM(768,256,batch_first=True,bidirectional=True)
-        
         #self.soft
 
         self.label_output_layer = nn.Sequential(

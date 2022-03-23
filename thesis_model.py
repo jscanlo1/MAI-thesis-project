@@ -256,8 +256,8 @@ if __name__ == '__main__':
     '''
 
 
-    #dataset_type = 'AAAI'
-    dataset_type = 'LIAR'
+    dataset_type = 'AAAI'
+    #dataset_type = 'LIAR'
 
     writer = SummaryWriter()
 
@@ -372,9 +372,9 @@ if __name__ == '__main__':
 
 
     #Save models
-    save_path = 'saved_models/LIAR_BERT.pt'
+    save_path = 'saved_models/AAAI_BERT.pt'
 
-    trainer.save(save_path)
+    #trainer.save(save_path)
 
 
 

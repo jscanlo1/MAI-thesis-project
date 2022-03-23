@@ -1,11 +1,8 @@
 
 import os
 import random
-import string
 import torch
 import dataset
-import argparse
-import pickle
 
 import numpy as np
 from torch.utils.data import Dataset
@@ -14,25 +11,15 @@ from torch.utils.tensorboard import SummaryWriter
 
 import itertools
 
-import pandas as pd
-#import matplotlib.pyplot as plt
-
-from transformers import BertTokenizer
-from transformers import BertForSequenceClassification
 import torch.nn as nn
 import torch.optim as optim
 
 #Import some libraries for calculating metrics
 from sklearn.metrics import f1_score,precision_score,accuracy_score
-
-
-#from nltk.corpus import stopwords
-#from sklearn.preprocessing import LabelEncoder
 from transformers import AdamW 
 from transformers.optimization import get_linear_schedule_with_warmup
 from models.FakeNewsModel import FakeNewsModel
-from models.EmotionDetectionModel import EmotionDetectionModel
-from models.sent2emoModel import sent2emoModel
+
 #from torchMoji.torchmoji.model_def import torchmoji_emojis
 #from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
@@ -144,14 +131,6 @@ class Trainer(object):
                 train_token_type_ids = train_token_type_ids.to(device)
                 truth_label = truth_label.to(device)
 
-
-                '''
-                #BertForsSequencyClassification
-
-                truth_output = self.model(BERT_train_features, token_type_ids=None, attention_mask=train_mask, labels=truth_label)
-                test_loss += truth_output.loss.item()
-                logits = truth_output.logits.detach().cpu().numpy()
-                '''
                 
                 #Custom Models
                 truth_output = self.model(BERT_train_features, emoji_Train_Features, token_type_ids=None, attention_mask=train_mask)
@@ -235,26 +214,6 @@ if __name__ == '__main__':
 
     num_labels = vocab.num_labels()
     num_batches = len(train_dataloader)
-
-
-    '''
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    BERT_train_features, train_mask , train_token_type_ids,train_labels = next(itertools.islice(train_dataloader, 0, None))
-    print(f"Feature batch shape: {BERT_train_features.size()}")
-    print(f'Feature mask shape: {train_mask.size()}' )
-    print(f'Feature token type ids shape: {train_token_type_ids.size()}' )
-    print(f"Labels batch shape: {train_labels.size()}")
-    text = BERT_train_features[4]
-    mask = train_mask[4]
-    token_type_ids = train_token_type_ids[4]
-    label = train_labels[4]
-    print(f"Text Tokens: {text}")
-    print("Words: " , tokenizer.convert_ids_to_tokens(text))
-    print('Mask: ', mask)
-    print('Token Type IDs: ', token_type_ids)
-    print(f"Label: {label}")
-    exit()
-    '''
 
 
 

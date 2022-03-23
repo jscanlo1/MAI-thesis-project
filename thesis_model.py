@@ -33,8 +33,8 @@ from transformers.optimization import get_linear_schedule_with_warmup
 from models.FakeNewsModel import FakeNewsModel
 from models.EmotionDetectionModel import EmotionDetectionModel
 from models.sent2emoModel import sent2emoModel
-from torchMoji.torchmoji.model_def import torchmoji_emojis
-from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
+#from torchMoji.torchmoji.model_def import torchmoji_emojis
+#from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
 bert_lr = 1e-5
 weight_decay = 1e-5

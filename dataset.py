@@ -10,9 +10,9 @@ import pandas as pd
 from collections import defaultdict
 from keras.preprocessing.sequence import pad_sequences
 from nltk.corpus import stopwords
-from torchMoji.torchmoji.sentence_tokenizer import SentenceTokenizer
-from torchMoji.torchmoji.model_def import torchmoji_emojis
-from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
+#from torchMoji.torchmoji.sentence_tokenizer import SentenceTokenizer
+#from torchMoji.torchmoji.model_def import torchmoji_emojis
+#from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
 
 
@@ -100,6 +100,8 @@ class CustomDataset(Dataset):
         text_item = self.text[idx]
         label = self.truth_labels[idx]
 
+        emo_item = self.deepMoji_input[idx]
+
 
         if self.transform:
             image = self.transform(text_item)
@@ -109,7 +111,7 @@ class CustomDataset(Dataset):
             #Potentially move conversion to tensors to init
             #
 
-        return torch.LongTensor(text_item), torch.LongTensor(self.deepMoji_input) ,torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
+        return torch.LongTensor(text_item), torch.LongTensor(emo_item) ,torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
 
 
 

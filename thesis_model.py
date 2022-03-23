@@ -256,7 +256,7 @@ if __name__ == '__main__':
     '''
 
 
-    dataset_type = 'AAAI'
+    dataset_type = 'LIAR'
     #dataset_type = 'LIAR'
 
     writer = SummaryWriter()

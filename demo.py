@@ -16,7 +16,7 @@ from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
 
 
-test_text = ['COVID causes cancer']
+test_text = ['COVID was invented in a lab']
 
 print(f"Test Text: {test_text}")
 
@@ -37,13 +37,13 @@ emoji_prob = model(emoji_tokenized)
 #Handle Bert tokens
 bert_inputs = []
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-BERT_text = tokenizer.encode(test_text)
+BERT_text = tokenizer.encode(test_text[0])
 bert_inputs.append(BERT_text)
 bert_inputs = pad_sequences(bert_inputs, maxlen=128, dtype="long", truncating="post", padding="post")
 
 attention_masks = []
 for seq in bert_inputs:
-            seq_mask = [float(i>0) for i in seq]
+            seq_mask = [int(i>0) for i in seq]
             attention_masks.append(seq_mask)
 
 
@@ -62,7 +62,7 @@ attention_mask = attention_masks[0]
 print(bert_input)
 print(attention_mask)
 
-model_output = model(bert_inputs[0],emoji_prob, token_type_ids=None, attention_mask=None)
+model_output = model(bert_inputs[0],emoji_prob, token_type_ids=None, attention_mask=attention_mask)
 
 index_max = np.argmax(model_output)
 

@@ -187,7 +187,7 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    dataset_type = 'LIAR'
+    dataset_type = 'AAAI'
 
     writer = SummaryWriter()
     torch.cuda.empty_cache()
@@ -273,8 +273,8 @@ if __name__ == '__main__':
     np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
 
     #Save models
-    save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'
-    trainer.save(save_path)
+    #save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'
+    #trainer.save(save_path)
 
     #Load Model
     '''

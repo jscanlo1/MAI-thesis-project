@@ -30,6 +30,7 @@ class FakeNewsModel(nn.Module):
 
 
     def forward(self, text_input,emoji_Input,token_type_ids,attention_mask):
+        print(attention_mask)
         bert_output = self.bert(input_ids = text_input, attention_mask  = attention_mask)
         emoji_output = self.emo_layer(emoji_Input)
         output = torch.cat((bert_output.pooler_output, emoji_output), dim=1)

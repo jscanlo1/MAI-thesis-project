@@ -222,9 +222,10 @@ def load_data(input_max, dataset_type):
         #print(deepMoji_inputs)
         #print(emo_results.shape)
         #print(emo_results[0])
+        
 
 
-        return CustomDataset( emo_results, truth_label_input)
+        return CustomDataset( deepMoji_inputs, truth_label_input)
 
     return (
                processing_data(train_path,'train'),

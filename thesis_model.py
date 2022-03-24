@@ -189,7 +189,9 @@ if __name__ == '__main__':
     #Read in data and load it
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
     print("THIS FAR")
-    print(train_set[0])
+    #print(train_set.deepMoji_input[0])
+    #print(train_set.truth_labels[0])
+
     train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
     val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)

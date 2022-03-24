@@ -16,7 +16,7 @@ import torch.optim as optim
 
 #Import some libraries for calculating metrics
 from sklearn.metrics import f1_score,precision_score,accuracy_score
-from transformers import AdamW 
+from transformers import AdamW
 from transformers.optimization import get_linear_schedule_with_warmup
 from models.FakeNewsModel import FakeNewsModel
 
@@ -187,14 +187,14 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    dataset_type = 'AAAI'
+    dataset_type = 'LIAR'
 
     writer = SummaryWriter()
     torch.cuda.empty_cache()
 
     
-    #seed = 123
-    seed = 111
+    seed = 123
+    #seed = 111
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -273,7 +273,7 @@ if __name__ == '__main__':
     np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
 
     #Save models
-    save_path = 'saved_models/AAAI_BERT_with_deepMoji.pt'
+    save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'
     trainer.save(save_path)
 
     #Load Model

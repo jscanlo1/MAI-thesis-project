@@ -188,8 +188,9 @@ if __name__ == '__main__':
 
     #Read in data and load it
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
-
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
+    print("THIS FAR")
+    print(train_set[0])
+    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
     val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
 
@@ -197,6 +198,14 @@ if __name__ == '__main__':
     num_batches = len(train_dataloader)
 
 
+    train_features, train_labels = next(itertools.islice(train_dataloader, 0, None))
+    print(f"Feature batch shape: {train_features.size()}")
+
+    print(f"Labels batch shape: {train_labels.size()}")
+    emo_probs = train_features[0]
+    label = train_labels[0]
+    print(f"Text Tokens: {emo_probs}")
+    
 
     exit()
     #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE

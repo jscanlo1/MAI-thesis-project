@@ -97,6 +97,7 @@ class CustomDataset(Dataset):
         label = self.truth_labels[idx]
 
         emo_item = self.deepMoji_input[idx]
+        print(emo_item)
 
 
         if self.transform:
@@ -200,7 +201,7 @@ def load_data(input_max, dataset_type):
 
         #Handles deepMoji inputs
 
-        #emo_results = np.array(deepMoji_inputs)
+        emo_results = np.array(deepMoji_inputs)
         
 
         
@@ -219,11 +220,11 @@ def load_data(input_max, dataset_type):
 
         #print(emo_results)
         #print(deepMoji_inputs)
-        #print(deepMoji_inputs.shape)
-        #print(deepMoji_inputs[0])
+        #print(emo_results.shape)
+        #print(emo_results[0])
 
 
-        return CustomDataset( deepMoji_inputs, truth_label_input)
+        return CustomDataset( emo_results, truth_label_input)
 
     return (
                processing_data(train_path,'train'),

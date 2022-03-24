@@ -62,7 +62,7 @@ attention_mask = attention_masks[0]
 print(bert_input)
 print(attention_mask)
 
-model_output = model(bert_inputs[0],emoji_prob, token_type_ids=None, attention_mask=attention_masks[0])
+model_output = model(bert_inputs[0],emoji_prob, token_type_ids=None, attention_mask=None)
 
 index_max = np.argmax(model_output)
 

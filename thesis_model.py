@@ -25,8 +25,8 @@ from models.FakeNewsModel import FakeNewsModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
-lr = 5e-5
-#lr = 0.0001
+#lr = 5e-5
+lr = 0.0001
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -40,8 +40,6 @@ class Trainer(object):
         # Set up params for thesis model
         # Must include provisions for frozen emotion detection model
 
-        #self.model.EmotionModel.parameters().requires_grad = False
-        #self.model.EmotionModel.bias.requires_grad = False
         '''
 
         for param in self.model.EmotionModel.parameters():
@@ -52,26 +50,8 @@ class Trainer(object):
         other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
         '''
 
-        bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params)
-
-        no_decay = ['bias', 'LayerNorm.weight']
-
-        #Include Paramters for Loss [possibly e.g. multiLoss]
-
-        optimizer_grouped_parameters = [
-            {'params': [p for n, p in model.bert.named_parameters() if not any(nd in n for nd in no_decay)],
-            'lr': bert_lr,
-            'weight_decay': 0.01},
-            {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
-            'lr': bert_lr,
-            'weight_decay_rate': 0.0},
-            {'params': other_params,
-            'lr': lr,
-            'weight_decay': weight_decay}
-        ]
-
-        self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=lr, weight_decay=weight_decay)
+        
+        self.optimizer = optim.Adam(self.model.parameters(), lr=lr, weight_decay=weight_decay)
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
         #self.scheduler = get_linear_schedule_with_warmup(optimizer_grouped_parameters,num_warmup_steps=3,num_training_steps=5*num_batches)
 
@@ -83,16 +63,17 @@ class Trainer(object):
 
         loss_array = []
 
-        for batch, (BERT_train_features, emoji_Train_Features ,train_mask , train_token_type_ids, truth_label) in enumerate(data_loader):
-            BERT_train_features = BERT_train_features.to(device)
+        for batch, ( emoji_Train_Features ,truth_label) in enumerate(data_loader):
+
+            print(emoji_Train_Features)
+            print(truth_label)
             emoji_Train_Features = emoji_Train_Features.to(device).float()
-            train_mask = train_mask.to(device)
-            train_token_type_ids = train_token_type_ids.to(device)
+
             truth_label = truth_label.to(device)
 
 
             #This uses custom models
-            truth_output = self.model(BERT_train_features,emoji_Train_Features, token_type_ids=None, attention_mask=train_mask)
+            truth_output = self.model(emoji_Train_Features)
             loss = self.loss_fn(truth_output ,truth_label.flatten())
             
 
@@ -107,7 +88,7 @@ class Trainer(object):
             loss_array.append(loss.item())
 
             if batch % 20 == 0:
-                loss, current = loss.item(), batch * len(BERT_train_features)
+                loss, current = loss.item(), batch * len(emoji_Train_Features)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
         self.scheduler.step()
         loss = np.mean(loss_array)
@@ -124,16 +105,13 @@ class Trainer(object):
         test_loss, correct = 0, 0
 
         with torch.no_grad():
-            for BERT_train_features, emoji_Train_Features, train_mask , train_token_type_ids, truth_label in data_loader:
-                BERT_train_features = BERT_train_features.to(device)
+            for emoji_Train_Features, truth_label in data_loader:
                 emoji_Train_Features = emoji_Train_Features.to(device).float()
-                train_mask = train_mask.to(device)
-                train_token_type_ids = train_token_type_ids.to(device)
                 truth_label = truth_label.to(device)
 
                 
                 #Custom Models
-                truth_output = self.model(BERT_train_features, emoji_Train_Features, token_type_ids=None, attention_mask=train_mask)
+                truth_output = self.model(emoji_Train_Features)
                 test_loss += self.loss_fn(truth_output ,truth_label.flatten())
                 logits = truth_output.detach().cpu().numpy()
                 
@@ -211,7 +189,7 @@ if __name__ == '__main__':
     #Read in data and load it
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
+    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
     val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
 
@@ -220,6 +198,7 @@ if __name__ == '__main__':
 
 
 
+    exit()
     #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE
     #Create Full fake news model
 
@@ -244,7 +223,7 @@ if __name__ == '__main__':
     #Training
     trainer = Trainer(model,num_batches)
 
-    epochs = 10
+    epochs = 5
     
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
@@ -263,14 +242,15 @@ if __name__ == '__main__':
     print('Finished Training')
 
     writer.flush()
+    print(model)
 
     #test_loss, test_f1 = trainer.eval(test_loader)
     test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
     print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
 
-    print(model.label_output_layer[1].weight)
+    print(model.hidden[2].weight)
 
-    np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
+    np.savetxt('Final_Layer_Weights', model.hidden[2].weight.detach().cpu().numpy())
 
     #Save models
     #save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'

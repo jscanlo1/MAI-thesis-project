@@ -82,11 +82,8 @@ class Vocabulary_TSA(object):
 
 
 class CustomDataset(Dataset):
-    def __init__(self, text, deepMoji_input ,truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):
-        self.text = text
+    def __init__(self, deepMoji_input ,truth_labels, transform=None, target_transform=None):
         self.truth_labels = truth_labels
-        self.attention_masks = attention_masks
-        self.token_type_ids = token_type_ids
         self.deepMoji_input = deepMoji_input
         #Dunno what transforms are
         self.transform = transform
@@ -97,21 +94,20 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, idx):
         
-        text_item = self.text[idx]
         label = self.truth_labels[idx]
 
         emo_item = self.deepMoji_input[idx]
 
 
         if self.transform:
-            image = self.transform(text_item)
+            image = self.transform(emo_item)
         if self.target_transform:
             label = self.target_transform(label)
 
             #Potentially move conversion to tensors to init
             #
 
-        return torch.LongTensor(text_item), torch.LongTensor(emo_item) ,torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
+        return torch.LongTensor(emo_item) , torch.LongTensor(label)
 
 
 
@@ -204,47 +200,30 @@ def load_data(input_max, dataset_type):
 
         #Handles deepMoji inputs
 
-        emo_results = np.array(deepMoji_inputs)
+        #emo_results = np.array(deepMoji_inputs)
         
 
         
         #Handles Bert inputes
-        text_input = []
         truth_label_input = []
         #emo_results = []
         
-        for i, (text,label,emoji_probs) in enumerate(zip(text_items,text_labels,deepMoji_inputs)):
-            #print(emoji_probs)
-            BERT_text = tokenizer.encode(text)
+        for i, (text,label) in enumerate(zip(text_items,text_labels)):
             _truth_label_input = [vocab.label2id[label]]
-            text_input.append(BERT_text)
+
             truth_label_input.append(_truth_label_input)
 
             #_emo_probs = [x for x in emoji_probs]
             #emo_results.append(_emo_probs)
-            
-        
-        text_input = pad_sequences(text_input, maxlen=128, dtype="long", truncating="post", padding="post")
-        attention_masks = []
 
-        for seq in text_input:
-            seq_mask = [float(i>0) for i in seq]
-            attention_masks.append(seq_mask)
-
-        #Possibly include token type ids
-        #
-        token_type_ids = []
-
-        for x in text_input:
-            seq_token_type_id = np.zeros_like(x)
-            token_type_ids.append(seq_token_type_id)
 
         #print(emo_results)
-        print(emo_results)
-        print(emo_results.shape)
+        #print(deepMoji_inputs)
+        #print(deepMoji_inputs.shape)
+        #print(deepMoji_inputs[0])
 
 
-        return CustomDataset(text_input, emo_results, truth_label_input, token_type_ids, attention_masks)
+        return CustomDataset( deepMoji_inputs, truth_label_input)
 
     return (
                processing_data(train_path,'train'),

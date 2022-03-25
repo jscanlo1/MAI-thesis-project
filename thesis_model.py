@@ -51,9 +51,10 @@ class Trainer(object):
         emotion_params = set(self.model.EmotionModel.parameters())
         other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
         '''
-
+        emotion_params = set(self.model.emoji_output_layer.parameters())
+        final_layer_params = set(self.model.final_output_layer.parameters())
         bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params)
+        other_params = list(set(self.model.parameters()) - bert_params - emotion_params - final_layer_params)
 
         no_decay = ['bias', 'LayerNorm.weight']
 
@@ -65,6 +66,18 @@ class Trainer(object):
             'weight_decay': 0.01},
             {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
             'lr': bert_lr,
+            'weight_decay_rate': 0.0},
+            {'params': [p for n, p in model.emoji_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
+            'lr': 0.1,
+            'weight_decay': 0.01},
+            {'params': [p for n, p in model.emoji_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
+            'lr': 0.1,
+            'weight_decay_rate': 0.0},
+            {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
+            'lr': 0.0001,
+            'weight_decay': 0.01},
+            {'params': [p for n, p in model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
+            'lr': 0.0001,
             'weight_decay_rate': 0.0},
             {'params': other_params,
             'lr': lr,
@@ -211,7 +224,7 @@ if __name__ == '__main__':
     #Read in data and load it
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
+    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True  )
     val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
 
@@ -224,18 +237,6 @@ if __name__ == '__main__':
     #Create Full fake news model
 
 
-    '''
-    # Set up emotion model
-    with open("tokenizer.pickle", "rb") as handle:
-            t = pickle.load(handle)
-    matrix_len = len(t.word_index) + 1
-    embedding_matrix = torch.load("glove/embedding_matrix.pt")
-    emotion_model_path = 'saved_models/sent2emo.pt'
-    sent2emoModel = sent2emoModel(embedding_matrix=embedding_matrix,max_features = matrix_len ,num_labels=7).to(device)
-    sent2emoModel.load_state_dict(torch.load(emotion_model_path))
-    sent2emoModel.eval()
-    '''
-
     model = FakeNewsModel(num_labels).to(device)
     print(model)
 
@@ -243,7 +244,6 @@ if __name__ == '__main__':
 
     #Training
     trainer = Trainer(model,num_batches)
-
     epochs = 10
     
     for t in range(epochs):
@@ -268,9 +268,9 @@ if __name__ == '__main__':
     test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
     print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
 
-    print(model.label_output_layer[1].weight)
+    #print(model.label_output_layer[1].weight)
 
-    np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
+    #np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
 
     #Save models
     #save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'

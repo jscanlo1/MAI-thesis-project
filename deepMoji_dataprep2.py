@@ -14,7 +14,7 @@ from torchMoji.torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchMoji.torchmoji.model_def import torchmoji_emojis
 from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
-
+'''
 train_path = 'data/constraint_dataset/English_Train.xlsx'
 val_path = 'data/constraint_dataset/English_Val.xlsx'
 test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
@@ -22,8 +22,8 @@ test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
 train_path = 'data/liar_dataset/train.tsv'
 val_path = 'data/liar_dataset/valid.tsv'
 test_path = 'data/liar_dataset/test.tsv'
-'''
-dataset_type = 'AAAI'
+
+dataset_type = 'LIAR'
 
 
 def chunker(seq, size):
@@ -105,16 +105,17 @@ for x in test_text_items:
 
 print(test_deepMoji[0])
 
+'''
 torch.save(train_deepMoji,"deepMoji_inputs/AAAI/AAAI_train.pt")
 torch.save(val_deepMoji,"deepMoji_inputs/AAAI/AAAI_val.pt")
 torch.save(test_deepMoji,"deepMoji_inputs/AAAI/AAAI_test.pt")
 
 '''
-torch.save(max_train_deepMoji,"deepMoji_inputs/LIAR/LIAR_train.pt")
-torch.save(max_val_deepMoji,"deepMoji_inputs/LIAR/LIAR_val.pt")
-torch.save(max_test_deepMoji,"deepMoji_inputs/LIAR/LIAR_test.pt")
+torch.save(train_deepMoji,"deepMoji_inputs/LIAR/LIAR_train.pt")
+torch.save(val_deepMoji,"deepMoji_inputs/LIAR/LIAR_val.pt")
+torch.save(test_deepMoji,"deepMoji_inputs/LIAR/LIAR_test.pt")
 
-'''
+
 
 
 

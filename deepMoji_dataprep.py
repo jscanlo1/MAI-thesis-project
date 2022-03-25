@@ -14,7 +14,7 @@ from torchMoji.torchmoji.sentence_tokenizer import SentenceTokenizer
 from torchMoji.torchmoji.model_def import torchmoji_emojis
 from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
-'''
+
 train_path = 'data/constraint_dataset/English_Train.xlsx'
 val_path = 'data/constraint_dataset/English_Val.xlsx'
 test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
@@ -22,8 +22,8 @@ test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
 train_path = 'data/liar_dataset/train.tsv'
 val_path = 'data/liar_dataset/valid.tsv'
 test_path = 'data/liar_dataset/test.tsv'
-
-dataset_type = 'LIAR'
+'''
+dataset_type = 'AAAI'
 
 
 def chunker(seq, size):
@@ -74,58 +74,40 @@ model = torchmoji_emojis(PRETRAINED_PATH)
 st = SentenceTokenizer(vocabulary, maxlen)
 
 train_deepMoji = []
-for group in chunker(train_text_items, 100):
-    train_tokenized, _, _ = st.tokenize_sentences(group)
-    train_deepMoji_chunk = model(train_tokenized)
-    print(train_deepMoji_chunk)
-    train_deepMoji = train_deepMoji + [x for x in train_deepMoji_chunk]
+for x in (train_text_items):
+    train_tokenized, _, _ = st.tokenize_sentences([x])
+    train_deepMoji_ = model(train_tokenized)
+    print(train_deepMoji_)
+    train_deepMoji.append(train_deepMoji_[0])
 
-train_deepMoji = np.stack(train_deepMoji,axis=0)
+#train_deepMoji = np.stack(train_deepMoji,axis=0)
 
-max_train_deepMoji = []
-for x in train_deepMoji:
-    one_ind = top_elements(x,5)
-    new_array = np.zeros(64)
-    new_array[one_ind] = 1
-    max_train_deepMoji.append(new_array)
-max_train_deepMoji = np.stack(max_train_deepMoji,axis=0)
+print(train_deepMoji_) 
 
 val_deepMoji = []
-for group in chunker(val_text_items, 100):
-    val_tokenized, _, _ = st.tokenize_sentences(group)
-    val_deepMoji_chunk = model(val_tokenized)
-    val_deepMoji = val_deepMoji + [x for x in val_deepMoji_chunk]
+for x in val_text_items:
+    val_tokenized, _, _ = st.tokenize_sentences([x])
+    val_deepMoji_ = model(val_tokenized)
+    val_deepMoji.append(val_deepMoji_[0])
 
-val_deepMoji = np.stack(val_deepMoji,axis=0)
+#val_deepMoji = np.stack(val_deepMoji,axis=0)
 
-max_val_deepMoji = []
-for x in val_deepMoji:
-    one_ind = top_elements(x,5)
-    new_array = np.zeros(64)
-    new_array[one_ind] = 1
-    max_val_deepMoji.append(new_array)
-max_val_deepMoji = np.stack(max_val_deepMoji,axis=0)
+
 
 test_deepMoji = []
-for group in chunker(test_text_items, 100):
-    test_tokenized, _, _ = st.tokenize_sentences(group)
-    test_deepMoji_chunk = model(test_tokenized)
-    test_deepMoji = test_deepMoji + [x for x in test_deepMoji_chunk]
+for x in test_text_items:
+    test_tokenized, _, _ = st.tokenize_sentences([x])
+    test_deepMoji_ = model(test_tokenized)
+    test_deepMoji.append(test_deepMoji_[0])
 
-test_deepMoji = np.stack(test_deepMoji,axis=0)
-
-max_test_deepMoji = []
-for x in test_deepMoji:
-    one_ind = top_elements(x,5)
-    new_array = np.zeros(64)
-    new_array[one_ind] = 1
-    max_test_deepMoji.append(new_array)
-max_test_deepMoji = np.stack(max_test_deepMoji,axis=0)
+#test_deepMoji = np.stack(test_deepMoji,axis=0)
 
 
-torch.save(train_deepMoji,"deepMoji_inputs/LIAR/LIAR_train.pt")
-torch.save(val_deepMoji,"deepMoji_inputs/LIAR/LIAR_val.pt")
-torch.save(test_deepMoji,"deepMoji_inputs/LIAR/LIAR_test.pt")
+print(test_deepMoji[0])
+
+torch.save(train_deepMoji,"deepMoji_inputs/AAAI/AAAI_train.pt")
+torch.save(val_deepMoji,"deepMoji_inputs/AAAI/AAAI_val.pt")
+torch.save(test_deepMoji,"deepMoji_inputs/AAAI/AAAI_test.pt")
 
 '''
 torch.save(max_train_deepMoji,"deepMoji_inputs/LIAR/LIAR_train.pt")
@@ -133,18 +115,6 @@ torch.save(max_val_deepMoji,"deepMoji_inputs/LIAR/LIAR_val.pt")
 torch.save(max_test_deepMoji,"deepMoji_inputs/LIAR/LIAR_test.pt")
 
 '''
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

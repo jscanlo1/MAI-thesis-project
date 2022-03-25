@@ -201,13 +201,6 @@ def load_data(input_max, dataset_type):
             print("INVALID DATASET TYPE")
             exit()
 
-
-        #Handles deepMoji inputs
-
-        emo_results = np.array(deepMoji_inputs)
-        
-
-        
         #Handles Bert inputes
         text_input = []
         truth_label_input = []
@@ -239,12 +232,10 @@ def load_data(input_max, dataset_type):
             seq_token_type_id = np.zeros_like(x)
             token_type_ids.append(seq_token_type_id)
 
-        #print(emo_results)
-        print(emo_results)
-        print(emo_results.shape)
 
 
-        return CustomDataset(text_input, emo_results, truth_label_input, token_type_ids, attention_masks)
+
+        return CustomDataset(text_input, deepMoji_inputs, truth_label_input, token_type_ids, attention_masks)
 
     return (
                processing_data(train_path,'train'),

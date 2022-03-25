@@ -68,16 +68,16 @@ class Trainer(object):
             'lr': bert_lr,
             'weight_decay_rate': 0.0},
             {'params': [p for n, p in model.emoji_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
-            'lr': 0.1,
+            'lr': 0.01,
             'weight_decay': 0.01},
             {'params': [p for n, p in model.emoji_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
-            'lr': 0.1,
+            'lr': 0.01,
             'weight_decay_rate': 0.0},
             {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
-            'lr': 0.0001,
+            'lr': 0.001,
             'weight_decay': 0.01},
             {'params': [p for n, p in model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
-            'lr': 0.0001,
+            'lr': 0.001,
             'weight_decay_rate': 0.0},
             {'params': other_params,
             'lr': lr,
@@ -88,7 +88,75 @@ class Trainer(object):
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
         #self.scheduler = get_linear_schedule_with_warmup(optimizer_grouped_parameters,num_warmup_steps=3,num_training_steps=5*num_batches)
 
-    def train(self, data_loader):
+    def train(self, data_loader,epoch):
+
+        if epoch > 7:
+            emotion_params = set(self.model.emoji_output_layer.parameters())
+            final_layer_params = set(self.model.final_output_layer.parameters())
+            bert_params = set(self.model.bert.parameters())
+            other_params = list(set(self.model.parameters()) - bert_params - emotion_params - final_layer_params)
+
+            no_decay = ['bias', 'LayerNorm.weight']
+
+            optimizer_grouped_parameters = [
+                {'params': [p for n, p in self.model.bert.named_parameters() if not any(nd in n for nd in no_decay)],
+                'lr': bert_lr,
+                'weight_decay': 0.01},
+                {'params': [p for n, p in self.model.bert.named_parameters() if any(nd in n for nd in no_decay)],
+                'lr': bert_lr,
+                'weight_decay_rate': 0.0},
+                {'params': [p for n, p in self.model.emoji_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
+                'lr': 0.01,
+                'weight_decay': 0.01},
+                {'params': [p for n, p in self.model.emoji_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
+                'lr': 0.01,
+                'weight_decay_rate': 0.0},
+                {'params': [p for n, p in self.model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
+                'lr': 0.001,
+                'weight_decay': 0.01},
+                {'params': [p for n, p in self.model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
+                'lr': 0.001,
+                'weight_decay_rate': 0.0},
+                {'params': other_params,
+                'lr': lr,
+                'weight_decay': weight_decay}
+            ]
+            self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=lr, weight_decay=weight_decay)
+            self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
+        else:
+            emotion_params = set(self.model.emoji_output_layer.parameters())
+            final_layer_params = set(self.model.final_output_layer.parameters())
+            bert_params = set(self.model.bert.parameters())
+            other_params = list(set(self.model.parameters()) - bert_params - emotion_params - final_layer_params)
+
+            no_decay = ['bias', 'LayerNorm.weight']
+
+            optimizer_grouped_parameters = [
+                {'params': [p for n, p in model.becrt.named_parameters() if not any(nd in n for nd in no_decay)],
+                'lr': 0,
+                'weight_decay': 0.01},
+                {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
+                'lr': 0,
+                'weight_decay_rate': 0.0},
+                {'params': [p for n, p in model.emoji_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
+                'lr': 0.01,
+                'weight_decay': 0.01},
+                {'params': [p for n, p in model.emoji_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
+                'lr': 0.01,
+                'weight_decay_rate': 0.0},
+                {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
+                'lr': 0.001,
+                'weight_decay': 0.01},
+                {'params': [p for n, p in model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
+                'lr': 0.001,
+                'weight_decay_rate': 0.0},
+                {'params': other_params,
+                'lr': lr,
+                'weight_decay': weight_decay}
+            ]
+            self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=lr, weight_decay=weight_decay)
+            self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
+
 
         self.model.train()
 
@@ -200,7 +268,7 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    dataset_type = 'AAAI'
+    dataset_type = 'LIAR'
 
     writer = SummaryWriter()
     torch.cuda.empty_cache()
@@ -244,11 +312,11 @@ if __name__ == '__main__':
 
     #Training
     trainer = Trainer(model,num_batches)
-    epochs = 10
+    epochs = 20
     
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
-        train_loss = trainer.train(train_dataloader)
+        train_loss = trainer.train(train_dataloader,t)
         print("Epoch: {}     Train Loss: {:.8f} ".format(t+1, train_loss))
         dev_loss, dev_acc, dev_prec, dev_F1 = trainer.eval(val_dataloader)
         print("Epoch: {}     Dev Loss: {:.8f}     Dev Acc: {:.4f}     Dev Prec {:.4f}     Dev F1 {:.4f}".format(t+1, dev_loss, dev_acc, dev_prec, dev_F1))

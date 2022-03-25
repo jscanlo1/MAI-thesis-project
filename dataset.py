@@ -111,7 +111,7 @@ class CustomDataset(Dataset):
             #Potentially move conversion to tensors to init
             #
 
-        return torch.LongTensor(text_item), torch.LongTensor(emo_item) ,torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
+        return torch.LongTensor(text_item), torch.DoubleTensor(emo_item) ,torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
 
 
 

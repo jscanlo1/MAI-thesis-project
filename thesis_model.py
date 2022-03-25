@@ -26,7 +26,7 @@ from models.FakeNewsModel import FakeNewsModel
 bert_lr = 1e-5
 weight_decay = 1e-5
 #lr = 5e-5
-lr = 0.1
+lr = 0.002
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     #Training
     trainer = Trainer(model,num_batches)
 
-    epochs = 10
+    epochs = 20
     
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
@@ -260,9 +260,9 @@ if __name__ == '__main__':
     test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
     print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
 
-    print(model.hidden[2].weight)
+    #print(model.hidden[2].weight)
 
-    np.savetxt('Final_Layer_Weights', model.hidden[2].weight.detach().cpu().numpy())
+    #np.savetxt('Final_Layer_Weights', model.hidden[2].weight.detach().cpu().numpy())
 
     #Save models
     #save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'

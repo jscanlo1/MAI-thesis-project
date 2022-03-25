@@ -26,7 +26,7 @@ from models.FakeNewsModel import FakeNewsModel
 bert_lr = 1e-5
 weight_decay = 1e-5
 #lr = 5e-5
-lr = 0.0001
+lr = 0.01
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -65,8 +65,8 @@ class Trainer(object):
 
         for batch, ( emoji_Train_Features ,truth_label) in enumerate(data_loader):
 
-            print(emoji_Train_Features)
-            print(truth_label)
+           #print(emoji_Train_Features)
+            #print(truth_label)
             emoji_Train_Features = emoji_Train_Features.to(device).float()
 
             truth_label = truth_label.to(device)
@@ -192,14 +192,14 @@ if __name__ == '__main__':
     #print(train_set.deepMoji_input[0])
     #print(train_set.truth_labels[0])
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
+    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
     val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
 
     num_labels = vocab.num_labels()
     num_batches = len(train_dataloader)
 
-
+    '''
     train_features, train_labels = next(itertools.islice(train_dataloader, 0, None))
     print(f"Feature batch shape: {train_features.size()}")
 
@@ -207,9 +207,10 @@ if __name__ == '__main__':
     emo_probs = train_features[0]
     label = train_labels[0]
     print(f"Text Tokens: {emo_probs}")
+    '''
     
 
-    exit()
+    
     #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE
     #Create Full fake news model
 
@@ -234,7 +235,7 @@ if __name__ == '__main__':
     #Training
     trainer = Trainer(model,num_batches)
 
-    epochs = 5
+    epochs = 10
     
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")

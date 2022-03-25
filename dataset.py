@@ -97,7 +97,6 @@ class CustomDataset(Dataset):
         label = self.truth_labels[idx]
 
         emo_item = self.deepMoji_input[idx]
-        print(emo_item)
 
 
         if self.transform:
@@ -107,8 +106,9 @@ class CustomDataset(Dataset):
 
             #Potentially move conversion to tensors to init
             #
-
-        return torch.LongTensor(emo_item) , torch.LongTensor(label)
+        #Change to torch.DoubleTensor for more accuracy
+        #FloatTensor
+        return torch.DoubleTensor(emo_item) , torch.LongTensor(label)
 
 
 

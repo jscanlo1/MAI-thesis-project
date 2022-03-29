@@ -132,7 +132,7 @@ class Trainer(object):
             no_decay = ['bias', 'LayerNorm.weight']
 
             optimizer_grouped_parameters = [
-                {'params': [p for n, p in model.becrt.named_parameters() if not any(nd in n for nd in no_decay)],
+                {'params': [p for n, p in model.bert.named_parameters() if not any(nd in n for nd in no_decay)],
                 'lr': 0,
                 'weight_decay': 0.01},
                 {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],

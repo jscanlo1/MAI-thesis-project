@@ -273,13 +273,14 @@ if __name__ == '__main__':
     writer = SummaryWriter()
     torch.cuda.empty_cache()
 
-    
+    '''
     seed = 123
     #seed = 111
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+    '''
     
 
 

@@ -264,11 +264,13 @@ if __name__ == '__main__':
     #print(torch.version.cuda)
     #print(torch.cuda.current_device())
 
+    '''
     seed = 123
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
+    '''
 
 
     torch.cuda.device(1)
@@ -283,7 +285,7 @@ if __name__ == '__main__':
     #(train_set, dev_set, test_set), vocab = dataset.load_data(args.input_max_length)
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=False)
+    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
     val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
 

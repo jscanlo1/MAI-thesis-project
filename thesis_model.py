@@ -26,7 +26,7 @@ from models.FakeNewsModel import FakeNewsModel
 bert_lr = 1e-5
 weight_decay = 1e-5
 #lr = 5e-5
-lr = 0.002
+lr = 0.005
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -170,14 +170,14 @@ if __name__ == '__main__':
     writer = SummaryWriter()
     torch.cuda.empty_cache()
 
-    
+    '''
     seed = 123
     #seed = 111
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    
+    '''
 
 
     torch.cuda.device(1)
@@ -192,9 +192,9 @@ if __name__ == '__main__':
     #print(train_set.deepMoji_input[0])
     #print(train_set.truth_labels[0])
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True)
-    val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
-    test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
+    train_dataloader = DataLoader(train_set, batch_size=64, shuffle=True)
+    val_dataloader = DataLoader(val_set, batch_size=64, shuffle=True)
+    test_dataloader = DataLoader(test_set, batch_size=64, shuffle=True)
 
     num_labels = vocab.num_labels()
     num_batches = len(train_dataloader)
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     #Training
     trainer = Trainer(model,num_batches)
 
-    epochs = 20
+    epochs = 10
     
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
@@ -265,8 +265,8 @@ if __name__ == '__main__':
     #np.savetxt('Final_Layer_Weights', model.hidden[2].weight.detach().cpu().numpy())
 
     #Save models
-    #save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'
-    #trainer.save(save_path)
+    save_path = 'saved_models/LIAR__deepMoji.pt'
+    trainer.save(save_path)
 
     #Load Model
     '''

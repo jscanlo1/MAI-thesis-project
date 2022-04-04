@@ -51,10 +51,9 @@ class Trainer(object):
         emotion_params = set(self.model.EmotionModel.parameters())
         other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
         '''
-        emotion_params = set(self.model.emoji_output_layer.parameters())
         final_layer_params = set(self.model.final_output_layer.parameters())
         bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params - emotion_params - final_layer_params)
+        other_params = list(set(self.model.parameters()) - bert_params- final_layer_params)
 
         no_decay = ['bias', 'LayerNorm.weight']
 
@@ -66,12 +65,6 @@ class Trainer(object):
             'weight_decay': 0.01},
             {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
             'lr': bert_lr,
-            'weight_decay_rate': 0.0},
-            {'params': [p for n, p in model.emoji_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
-            'lr': 0.01,
-            'weight_decay': 0.01},
-            {'params': [p for n, p in model.emoji_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
-            'lr': 0.01,
             'weight_decay_rate': 0.0},
             {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
             'lr': 0.001,
@@ -91,10 +84,9 @@ class Trainer(object):
     def train(self, data_loader,epoch):
 
         if epoch > 7:
-            emotion_params = set(self.model.emoji_output_layer.parameters())
             final_layer_params = set(self.model.final_output_layer.parameters())
             bert_params = set(self.model.bert.parameters())
-            other_params = list(set(self.model.parameters()) - bert_params - emotion_params - final_layer_params)
+            other_params = list(set(self.model.parameters()) - bert_params - final_layer_params)
 
             no_decay = ['bias', 'LayerNorm.weight']
 
@@ -104,12 +96,6 @@ class Trainer(object):
                 'weight_decay': 0.01},
                 {'params': [p for n, p in self.model.bert.named_parameters() if any(nd in n for nd in no_decay)],
                 'lr': bert_lr,
-                'weight_decay_rate': 0.0},
-                {'params': [p for n, p in self.model.emoji_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
-                'lr': 0.01,
-                'weight_decay': 0.01},
-                {'params': [p for n, p in self.model.emoji_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
-                'lr': 0.01,
                 'weight_decay_rate': 0.0},
                 {'params': [p for n, p in self.model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
                 'lr': 0.001,
@@ -137,12 +123,6 @@ class Trainer(object):
                 'weight_decay': 0.01},
                 {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
                 'lr': 0,
-                'weight_decay_rate': 0.0},
-                {'params': [p for n, p in model.emoji_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
-                'lr': 0.01,
-                'weight_decay': 0.01},
-                {'params': [p for n, p in model.emoji_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
-                'lr': 0.01,
                 'weight_decay_rate': 0.0},
                 {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
                 'lr': 0.001,

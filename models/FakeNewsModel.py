@@ -27,7 +27,7 @@ class FakeNewsModel(nn.Module):
             #nn.Linear(num_labels,num_labels)
         )
         self.final_output_layer = nn.Sequential(
-            nn.Linear(2*num_labels,num_labels)
+            nn.Linear(64 + num_labels,num_labels)
         )
         
 
@@ -36,9 +36,9 @@ class FakeNewsModel(nn.Module):
         bert_output = self.bert(input_ids = text_input, attention_mask  = attention_mask)
         #emoji_output = self.emo_layer(emoji_Input)
         bert_output_ = self.bert_output_layer(bert_output.pooler_output)
-        emoji_output = self.emoji_output_layer(emoji_Input)
 
-        output = torch.cat((bert_output_, emoji_output), dim=1)
+
+        output = torch.cat((bert_output_, emoji_Input), dim=1)
 
         label_output = self.final_output_layer(output)
         

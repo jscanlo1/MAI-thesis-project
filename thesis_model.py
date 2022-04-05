@@ -256,7 +256,7 @@ if __name__ == '__main__':
     '''
 
 
-    dataset_type = 'LIAR'
+    dataset_type = 'AAAI '
     #dataset_type = 'LIAR'
 
     writer = SummaryWriter()
@@ -264,13 +264,13 @@ if __name__ == '__main__':
     #print(torch.version.cuda)
     #print(torch.cuda.current_device())
 
-    '''
+    
     seed = 123
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    '''
+    
 
 
     torch.cuda.device(1)
@@ -321,22 +321,7 @@ if __name__ == '__main__':
 
     exit()
     '''
-    #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE
 
-    #Create Full fake news model
-
-
-    
-    #Set up emotion model
-    
-    '''
-    emotion_model_path = 'saved_models/twitter_emotion_model.pt'
-    EmotionModel = EmotionDetectionModel(num_labels=4).to(device)
-    EmotionModel.load_state_dict(torch.load(emotion_model_path))
-    EmotionModel.eval()
-
-    model = FakeNewsModel(num_labels,EmotionModel).to(device)
-    '''
     
 
     #model = BertForSequenceClassification.from_pretrained("bert-base-uncased", num_labels=num_labels).to(device)

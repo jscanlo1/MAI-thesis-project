@@ -7,9 +7,11 @@ from transformers import BertModel
 
 
 class FakeNewsModel(nn.Module):
-    def __init__(self,num_labels):
+    def __init__(self,num_labels,emotion_module):
         super(FakeNewsModel, self).__init__()
         self.bert = BertModel.from_pretrained('bert-base-uncased')
+
+        self.emotion_module = emotion_module
 
         #64 emojis
         self.emoji_output_layer = nn.Sequential(
@@ -27,7 +29,7 @@ class FakeNewsModel(nn.Module):
             #nn.Linear(num_labels,num_labels)
         )
         self.final_output_layer = nn.Sequential(
-            nn.Linear(64 + num_labels,num_labels)
+            nn.Linear(2 * num_labels,num_labels)
         )
         
 
@@ -37,8 +39,10 @@ class FakeNewsModel(nn.Module):
         #emoji_output = self.emo_layer(emoji_Input)
         bert_output_ = self.bert_output_layer(bert_output.pooler_output)
 
+        emoji_outputs = self.emotion_module(emoji_Input)
 
-        output = torch.cat((bert_output_, emoji_Input), dim=1)
+
+        output = torch.cat((bert_output_, emoji_outputs), dim=1)
 
         label_output = self.final_output_layer(output)
         

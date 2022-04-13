@@ -18,6 +18,7 @@ import torch.optim as optim
 from sklearn.metrics import f1_score,precision_score,accuracy_score
 from transformers import AdamW
 from transformers.optimization import get_linear_schedule_with_warmup
+from models.EmotionDetectionModel import EmotionDetectionModel
 from models.FakeNewsModel import FakeNewsModel
 
 #from torchMoji.torchmoji.model_def import torchmoji_emojis
@@ -51,9 +52,11 @@ class Trainer(object):
         emotion_params = set(self.model.EmotionModel.parameters())
         other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
         '''
+
+        emotion_params = set(self.model.emotion_module.parameters())
         final_layer_params = set(self.model.final_output_layer.parameters())
         bert_params = set(self.model.bert.parameters())
-        other_params = list(set(self.model.parameters()) - bert_params- final_layer_params)
+        other_params = list(set(self.model.parameters()) - bert_params- final_layer_params - emotion_params)
 
         no_decay = ['bias', 'LayerNorm.weight']
 
@@ -72,6 +75,12 @@ class Trainer(object):
             {'params': [p for n, p in model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
             'lr': 0.001,
             'weight_decay_rate': 0.0},
+            {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
+            'lr': bert_lr,
+            'weight_decay': 0.01},
+            {'params': [p for n, p in model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
+            'lr': bert_lr,
+            'weight_decay_rate': 0.0},
             {'params': other_params,
             'lr': lr,
             'weight_decay': weight_decay}
@@ -83,59 +92,6 @@ class Trainer(object):
 
     def train(self, data_loader,epoch):
 
-        if epoch > 7:
-            final_layer_params = set(self.model.final_output_layer.parameters())
-            bert_params = set(self.model.bert.parameters())
-            other_params = list(set(self.model.parameters()) - bert_params - final_layer_params)
-
-            no_decay = ['bias', 'LayerNorm.weight']
-
-            optimizer_grouped_parameters = [
-                {'params': [p for n, p in self.model.bert.named_parameters() if not any(nd in n for nd in no_decay)],
-                'lr': bert_lr,
-                'weight_decay': 0.01},
-                {'params': [p for n, p in self.model.bert.named_parameters() if any(nd in n for nd in no_decay)],
-                'lr': bert_lr,
-                'weight_decay_rate': 0.0},
-                {'params': [p for n, p in self.model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
-                'lr': 0.001,
-                'weight_decay': 0.01},
-                {'params': [p for n, p in self.model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
-                'lr': 0.001,
-                'weight_decay_rate': 0.0},
-                {'params': other_params,
-                'lr': lr,
-                'weight_decay': weight_decay}
-            ]
-            self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=lr, weight_decay=weight_decay)
-            self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
-        else:
-            emotion_params = set(self.model.emoji_output_layer.parameters())
-            final_layer_params = set(self.model.final_output_layer.parameters())
-            bert_params = set(self.model.bert.parameters())
-            other_params = list(set(self.model.parameters()) - bert_params - emotion_params - final_layer_params)
-
-            no_decay = ['bias', 'LayerNorm.weight']
-
-            optimizer_grouped_parameters = [
-                {'params': [p for n, p in model.bert.named_parameters() if not any(nd in n for nd in no_decay)],
-                'lr': 0,
-                'weight_decay': 0.01},
-                {'params': [p for n, p in model.bert.named_parameters() if any(nd in n for nd in no_decay)],
-                'lr': 0,
-                'weight_decay_rate': 0.0},
-                {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
-                'lr': 0.001,
-                'weight_decay': 0.01},
-                {'params': [p for n, p in model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
-                'lr': 0.001,
-                'weight_decay_rate': 0.0},
-                {'params': other_params,
-                'lr': lr,
-                'weight_decay': weight_decay}
-            ]
-            self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=lr, weight_decay=weight_decay)
-            self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
 
 
         self.model.train()
@@ -285,8 +241,12 @@ if __name__ == '__main__':
     #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE
     #Create Full fake news model
 
+    emotion_model_path = "saved_models/LIAR__deepMoji.pt"
+    emotion_model = EmotionDetectionModel(num_labels)
+    emotion_model.load_state_dict(torch.load(emotion_model_path))
 
-    model = FakeNewsModel(num_labels).to(device)
+
+    model = FakeNewsModel(num_labels,emotion_model).to(device)
     print(model)
 
     torch.cuda.memory_summary(device=None, abbreviated=False)

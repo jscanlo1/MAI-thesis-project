@@ -25,7 +25,8 @@ from models.FakeNewsModel import FakeNewsModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
-lr = 5e-5
+#lr = 5e-5
+lr = 0.001
 #lr = 0.0001
 alpha = 0.95
 max_grad_norm = 1.0
@@ -268,7 +269,7 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    dataset_type = 'LIAR'
+    dataset_type = 'AAAI'
 
     writer = SummaryWriter()
     torch.cuda.empty_cache()

@@ -241,7 +241,7 @@ if __name__ == '__main__':
     #INCLUDE SOME FLOW CONTROL HERE TO STREAMLINE
     #Create Full fake news model
 
-    emotion_model_path = "saved_models/LIAR__deepMoji.pt"
+    emotion_model_path = "pre_trained\LIAR__deepMoji.pt"
     emotion_model = EmotionDetectionModel(num_labels)
     emotion_model.load_state_dict(torch.load(emotion_model_path))
 

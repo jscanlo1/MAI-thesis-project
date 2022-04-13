@@ -26,7 +26,7 @@ from models.FakeNewsModel import FakeNewsModel
 bert_lr = 1e-5
 weight_decay = 1e-5
 #lr = 5e-5
-lr = 0.005
+lr = 0.1
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -165,19 +165,19 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    dataset_type = 'LIAR'
+    dataset_type = 'AAAI'
 
     writer = SummaryWriter()
     torch.cuda.empty_cache()
 
-    '''
+    
     seed = 123
     #seed = 111
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    '''
+    
 
 
     torch.cuda.device(1)
@@ -235,7 +235,7 @@ if __name__ == '__main__':
     #Training
     trainer = Trainer(model,num_batches)
 
-    epochs = 10
+    epochs = 18
     
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     #np.savetxt('Final_Layer_Weights', model.hidden[2].weight.detach().cpu().numpy())
 
     #Save models
-    save_path = 'saved_models/LIAR__deepMoji.pt'
+    save_path = 'saved_models/AAAI__deepMoji.pt'
     trainer.save(save_path)
 
     #Load Model

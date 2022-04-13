@@ -15,6 +15,10 @@ class FakeNewsModel(nn.Module):
 
         self.hidden = nn.Sequential(
  
+            nn.Linear(64,64),
+
+            nn.ReLU(),
+            nn.Dropout(0.2),
             nn.Linear(64,num_labels)
         )
 

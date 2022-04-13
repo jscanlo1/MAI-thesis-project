@@ -13,12 +13,16 @@ class FakeNewsModel(nn.Module):
 
         self.emotion_module = emotion_module
 
+        self.emotion_layers = nn.Sequential(*[self.emotion_module.hidden[i] for i in range(3)])
+
         #64 emojis
+        '''
         self.emoji_output_layer = nn.Sequential(
             nn.Dropout(0.1),
             nn.Linear(64,num_labels),
             nn.ReLU()
         )
+        '''
 
         self.bert_output_layer = nn.Sequential(
             #Possibly Exclude first two lines
@@ -29,7 +33,8 @@ class FakeNewsModel(nn.Module):
             #nn.Linear(num_labels,num_labels)
         )
         self.final_output_layer = nn.Sequential(
-            nn.Linear(2 * num_labels,num_labels)
+            #nn.Linear(64 + num_labels,num_labels)
+            nn.Linear(64 + 768,num_labels)
         )
         
 
@@ -37,12 +42,12 @@ class FakeNewsModel(nn.Module):
     def forward(self, text_input,emoji_Input,token_type_ids,attention_mask):
         bert_output = self.bert(input_ids = text_input, attention_mask  = attention_mask)
         #emoji_output = self.emo_layer(emoji_Input)
-        bert_output_ = self.bert_output_layer(bert_output.pooler_output)
+        #bert_output_ = self.bert_output_layer(bert_output.pooler_output)
 
-        emoji_outputs = self.emotion_module(emoji_Input)
+        emoji_outputs = self.emotion_layers(emoji_Input)
 
 
-        output = torch.cat((bert_output_, emoji_outputs), dim=1)
+        output = torch.cat((bert_output.pooler_output, emoji_outputs), dim=1)
 
         label_output = self.final_output_layer(output)
         

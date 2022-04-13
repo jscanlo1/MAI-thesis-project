@@ -26,8 +26,8 @@ from models.FakeNewsModel import FakeNewsModel
 
 bert_lr = 1e-5
 weight_decay = 1e-5
-lr = 5e-5
-#lr = 0.0001
+#lr = 5e-5
+lr = 0.001
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -53,7 +53,7 @@ class Trainer(object):
         other_params = list(set(self.model.parameters()) - bert_params - emotion_params)
         '''
 
-        emotion_params = set(self.model.emotion_module.parameters())
+        emotion_params = set(self.model.emotion_layers.parameters())
         final_layer_params = set(self.model.final_output_layer.parameters())
         bert_params = set(self.model.bert.parameters())
         other_params = list(set(self.model.parameters()) - bert_params- final_layer_params - emotion_params)
@@ -70,15 +70,15 @@ class Trainer(object):
             'lr': bert_lr,
             'weight_decay_rate': 0.0},
             {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
-            'lr': 0.001,
+            'lr': lr,
             'weight_decay': 0.01},
             {'params': [p for n, p in model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
-            'lr': 0.001,
+            'lr': lr,
             'weight_decay_rate': 0.0},
-            {'params': [p for n, p in model.final_output_layer.named_parameters() if not any(nd in n for nd in no_decay)],
+            {'params': [p for n, p in model.emotion_layers.named_parameters() if not any(nd in n for nd in no_decay)],
             'lr': bert_lr,
             'weight_decay': 0.01},
-            {'params': [p for n, p in model.final_output_layer.named_parameters() if any(nd in n for nd in no_decay)],
+            {'params': [p for n, p in model.emotion_layers.named_parameters() if any(nd in n for nd in no_decay)],
             'lr': bert_lr,
             'weight_decay_rate': 0.0},
             {'params': other_params,
@@ -209,14 +209,13 @@ if __name__ == '__main__':
     writer = SummaryWriter()
     torch.cuda.empty_cache()
 
-    '''
+    
     seed = 123
     #seed = 111
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
-    '''
     
 
 
@@ -229,9 +228,9 @@ if __name__ == '__main__':
     #Read in data and load it
     (train_set, val_set, test_set), vocab = dataset.load_data(512, dataset_type)
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True  )
-    val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
-    test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
+    train_dataloader = DataLoader(train_set, batch_size=8, shuffle=True  )
+    val_dataloader = DataLoader(val_set, batch_size=8, shuffle=True)
+    test_dataloader = DataLoader(test_set, batch_size=8, shuffle=True)
 
     num_labels = vocab.num_labels()
     num_batches = len(train_dataloader)
@@ -244,6 +243,7 @@ if __name__ == '__main__':
     emotion_model_path = "pre_trained\LIAR__deepMoji.pt"
     emotion_model = EmotionDetectionModel(num_labels)
     emotion_model.load_state_dict(torch.load(emotion_model_path))
+    #emotion_model.eval()
 
 
     model = FakeNewsModel(num_labels,emotion_model).to(device)
@@ -253,7 +253,7 @@ if __name__ == '__main__':
 
     #Training
     trainer = Trainer(model,num_batches)
-    epochs = 20
+    epochs = 5
     
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
@@ -277,9 +277,9 @@ if __name__ == '__main__':
     test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
     print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
 
-    #print(model.label_output_layer[1].weight)
+    print(model.final_output_layer[0].weight)
 
-    #np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
+    # np.savetxt('Final_Layer_Weights', model.label_output_layer[0].weight.detach().cpu().numpy())
 
     #Save models
     #save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'

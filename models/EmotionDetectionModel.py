@@ -9,7 +9,7 @@ class EmotionDetectionModel(nn.Module):
         #64 emojis
         self.relu = nn.ReLU()
 
-        self.emotion_layer = nn.Sequential(
+        self.hidden = nn.Sequential(
  
             nn.Linear(64,64),
 
@@ -18,10 +18,10 @@ class EmotionDetectionModel(nn.Module):
             nn.Linear(64,num_labels)
         )
 
-    def forward(self, text_input):
+    def forward(self, emoji_input):
 
         
-        label_output = self.emotion_layer(text_input)
+        label_output = self.hidden(emoji_input)
 
         #output = torch.softmax(label_output)
         

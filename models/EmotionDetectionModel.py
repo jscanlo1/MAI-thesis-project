@@ -34,4 +34,4 @@ class EmotionDetectionModel(nn.Module):
 
         #output = torch.softmax(label_output)
         
-        return label_output
+        return label_output, bert_output.pooler_output

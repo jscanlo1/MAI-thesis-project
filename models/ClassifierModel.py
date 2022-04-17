@@ -6,29 +6,32 @@ from transformers import BertModel
 class ClassifierModel(nn.Module):
     def __init__(self,num_labels):
         super(ClassifierModel, self).__init__()
-        
         '''
         self.label_output_layer = nn.Sequential(
             nn.Dropout(0.1),
-            nn.Linear(768 + 64, num_labels)
+            nn.Linear(768 + 64, 500),
+            nn.ReLU(),
+            nn.Linear(500,num_labels)
 
         )
         '''
-
+        
+        
         self.label_output_layer = nn.Sequential(
             nn.Dropout(0.1),
             nn.Linear(64, num_labels)
 
         )
-
-
-        '''
         
+        
+        
+        '''
         self.label_output_layer = nn.Sequential(
             nn.Dropout(0.1),
             nn.Linear(768, num_labels)
         )
         '''
+        
 
 
     def forward(self, text_input,emo_input):
@@ -38,7 +41,6 @@ class ClassifierModel(nn.Module):
 
         #label_output = self.label_output_layer(text_input)
         label_output = self.label_output_layer(emo_input)
-        
-        #output = torch.softmax(label_output)
+
         
         return label_output

@@ -27,8 +27,9 @@ from models.ClassifierModel import ClassifierModel
 bert_lr = 1e-5
 weight_decay = 1e-5
 #lr = 5e-5
-lr = 0.005
-#lr = 0.00001
+#lr = 0.005    #Current BEST LIAR
+#lr = 0.001
+lr = 0.0001
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -72,6 +73,25 @@ class Trainer(object):
         #self.scheduler = get_linear_schedule_with_warmup(optimizer_grouped_parameters,num_warmup_steps=3,num_training_steps=5*num_batches)
 
     def train(self, data_loader,epoch):
+        '''
+        if(epoch > 50):
+            lr_ = 0.1
+            params = list(set(self.model.parameters()))
+
+            no_decay = ['bias', 'LayerNorm.weight']
+
+            #Include Paramters for Loss [possibly e.g. multiLoss]
+            optimizer_grouped_parameters = [
+                
+                {'params': params,
+                'lr': 0.1,
+                'weight_decay': weight_decay}
+            ]
+
+            self.optimizer = optim.Adam(optimizer_grouped_parameters, lr=0.1, weight_decay=weight_decay)
+            self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, alpha)
+        '''
+
 
         self.model.train()
 
@@ -86,7 +106,7 @@ class Trainer(object):
 
 
             #This uses custom models
-            truth_output = self.model(BERT_train_features,emoji_Train_Features)
+            truth_output = self.model(BERT_train_features,emoji_Train_Features,epoch)
             loss = self.loss_fn(truth_output ,truth_label.flatten())
             
 
@@ -107,7 +127,7 @@ class Trainer(object):
         loss = np.mean(loss_array)
         return loss   
 
-    def eval(self, data_loader):
+    def eval(self, data_loader,epoch):
         self.model.eval()
         loss_array = []
         pred_flat_array = []
@@ -125,7 +145,7 @@ class Trainer(object):
 
                 
                 #Custom Models
-                truth_output = self.model(BERT_train_features, emoji_Train_Features)
+                truth_output = self.model(BERT_train_features, emoji_Train_Features,epoch)
                 test_loss += self.loss_fn(truth_output ,truth_label.flatten())
                 logits = truth_output.detach().cpu().numpy()
                 
@@ -179,7 +199,7 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    dataset_type = 'AAAI'
+    dataset_type = 'LIAR'
 
     writer = SummaryWriter()
     torch.cuda.empty_cache()
@@ -193,6 +213,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     '''
     
+    
 
 
     torch.cuda.device(1)
@@ -204,9 +225,9 @@ if __name__ == '__main__':
     #Read in data and load it
     (train_set, val_set, test_set), vocab = dataset_2.load_data(512, dataset_type)
 
-    train_dataloader = DataLoader(train_set, batch_size=32, shuffle=True  )
-    val_dataloader = DataLoader(val_set, batch_size=32, shuffle=True)
-    test_dataloader = DataLoader(test_set, batch_size=32, shuffle=True)
+    train_dataloader = DataLoader(train_set, batch_size=64, shuffle=True  )
+    val_dataloader = DataLoader(val_set, batch_size=64, shuffle=True)
+    test_dataloader = DataLoader(test_set, batch_size=64, shuffle=True)
 
     num_labels = vocab.num_labels()
     num_batches = len(train_dataloader)
@@ -230,9 +251,9 @@ if __name__ == '__main__':
         print(f"Epoch {t+1}\n-------------------------------")
         train_loss = trainer.train(train_dataloader,t)
         print("Epoch: {}     Train Loss: {:.8f} ".format(t+1, train_loss))
-        dev_loss, dev_acc, dev_prec, dev_F1 = trainer.eval(val_dataloader)
+        dev_loss, dev_acc, dev_prec, dev_F1 = trainer.eval(val_dataloader,t)
         print("Epoch: {}     Dev Loss: {:.8f}     Dev Acc: {:.4f}     Dev Prec {:.4f}     Dev F1 {:.4f}".format(t+1, dev_loss, dev_acc, dev_prec, dev_F1))
-        test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
+        test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader, t)
 
         writer.add_scalars('Training Vs validation Vs test Loss',{'Training':train_loss, 'Validation': dev_loss, 'Test': test_loss }, t+1)
         writer.add_scalars('Val Vs Test acc',{'Validation': dev_acc, 'Test': test_acc }, t+1)
@@ -245,14 +266,14 @@ if __name__ == '__main__':
     writer.flush()
 
     #test_loss, test_f1 = trainer.eval(test_loader)
-    test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader)
+    test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader,  51)
     print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
 
     #print(model.label_output_layer[1].weight)
     #np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
 
     #Save models
-    #save_path = 'saved_models/LIAR_BERT_with_deepMoji.pt'
+    #save_path = 'saved_models/LIAR_BERT__bootstrap.pt'
     #trainer.save(save_path)
 
     #Load Model

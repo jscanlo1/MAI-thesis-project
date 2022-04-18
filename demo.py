@@ -187,7 +187,7 @@ class Trainer(object):
         self.model.load_state_dict(torch.load(path))
 
 
-dataset_type = 'AAAI'
+dataset_type = 'LIAR'
 
 
 
@@ -245,9 +245,9 @@ print(f"Label: {label}")
 
 #Model
 
-save_path = 'saved_models\AAAI_BERT.pt'
+save_path = 'saved_models\LIAR_BERT.pt'
 
-model = EmotionDetectionModel(2)
+model = EmotionDetectionModel(num_labels)
 model.load_state_dict(torch.load(save_path, map_location=torch.device('cpu')))
 #model.eval()
 
@@ -278,6 +278,6 @@ else:
 
 '''
 
-torch.save(train_fake_news_features,"fake_news_features/AAAI/FN_AAAI_train.pt")
-torch.save(val_fake_news_features,"fake_news_features/AAAI/FN_AAAI_val.pt")
-torch.save(test_fake_news_features,"fake_news_features/AAAI/FN_AAAI_test.pt")
+torch.save(train_fake_news_features,"fake_news_features/LIAR/FN_LIAR_train.pt")
+torch.save(val_fake_news_features,"fake_news_features/LIAR/FN_LIAR_val.pt")
+torch.save(test_fake_news_features,"fake_news_features/LIAR/FN_LIAR_test.pt")

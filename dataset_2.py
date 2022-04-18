@@ -55,6 +55,20 @@ class Vocabulary_LIAR(object):
     def num_labels(self):
         return len(self.label2id)
 
+class Vocabulary_LIAR_POOL(object):
+    def __init__(self):
+        self.label2id = {"pants-fire": 0,
+                         "false": 0,
+                         "barely-true": 0,
+                         "half-true": 1,
+                         "mostly-true": 1,
+                         "true": 1
+                         }
+        self.id2label = {value: key for key, value in self.label2id.items()}
+
+    def num_labels(self):
+        return len(self.label2id)
+
 class Vocabulary_MELD(object):
     def __init__(self):
         self.label2id = {"neutral": 0,
@@ -128,7 +142,8 @@ def load_data(input_max, dataset_type):
         test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
 
     elif dataset_type == 'LIAR':
-        vocab = Vocabulary_LIAR()
+        #vocab = Vocabulary_LIAR()
+        vocab = Vocabulary_LIAR_POOL()
         train_path = 'data/liar_dataset/train.tsv'
         val_path = 'data/liar_dataset/valid.tsv'
         test_path = 'data/liar_dataset/test.tsv'
@@ -186,10 +201,13 @@ def load_data(input_max, dataset_type):
 
             if dataset_type_type == 'train':
                 deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_train.pt")
+                fake_news_features_input = torch.load("fake_news_features/LIAR/FN_LIAR_train.pt")
             elif dataset_type_type == 'val':
                 deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_val.pt")
+                fake_news_features_input = torch.load("fake_news_features/LIAR/FN_LIAR_val.pt")
             elif dataset_type_type == 'test':
                 deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_test.pt")
+                fake_news_features_input = torch.load("fake_news_features/LIAR/FN_LIAR_test.pt")
 
 
 

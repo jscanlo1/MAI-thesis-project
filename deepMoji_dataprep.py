@@ -10,9 +10,9 @@ import pandas as pd
 from collections import defaultdict
 from keras.preprocessing.sequence import pad_sequences
 from nltk.corpus import stopwords
-from torchMoji.torchmoji.sentence_tokenizer import SentenceTokenizer
-from torchMoji.torchmoji.model_def import torchmoji_emojis
-from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
+from torchMoji.deepmoji.sentence_tokenizer import SentenceTokenizer
+from torchMoji.deepmoji.model_def import torchmoji_emojis
+from torchMoji.deepmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
 '''
 train_path = 'data/constraint_dataset/English_Train.xlsx'

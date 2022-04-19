@@ -1,6 +1,7 @@
 import os
 import re
 import torch
+import json
 import numpy as np
 from transformers import BertTokenizer
 from torch.utils.data import Dataset
@@ -9,6 +10,9 @@ import pandas as pd
 from collections import defaultdict
 from keras.preprocessing.sequence import pad_sequences
 from nltk.corpus import stopwords
+#from torchMoji.torchmoji.sentence_tokenizer import SentenceTokenizer
+#from torchMoji.torchmoji.model_def import torchmoji_emojis
+#from torchMoji.torchmoji.global_variables import PRETRAINED_PATH, VOCAB_PATH
 
 
 
@@ -65,14 +69,25 @@ class Vocabulary_MELD(object):
     def num_labels(self):
         return len(self.label2id)
 
+class Vocabulary_TSA(object):
+    def __init__(self):
+        self.label2id = {"Negative": 0,
+                         "Neutral": 1,
+                         "Positive": 2,
+                         "Irrelevant": 3}
+        self.id2label = {value: key for key, value in self.label2id.items()}
+
+    def num_labels(self):
+        return len(self.label2id)
+
 
 class CustomDataset(Dataset):
-    def __init__(self, text, truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):
+    def __init__(self, text, deepMoji_input ,truth_labels, token_type_ids ,attention_masks, transform=None, target_transform=None):
         self.text = text
         self.truth_labels = truth_labels
         self.attention_masks = attention_masks
         self.token_type_ids = token_type_ids
-
+        self.deepMoji_input = deepMoji_input
         #Dunno what transforms are
         self.transform = transform
         self.target_transform = target_transform
@@ -85,6 +100,8 @@ class CustomDataset(Dataset):
         text_item = self.text[idx]
         label = self.truth_labels[idx]
 
+        emo_item = self.deepMoji_input[idx]
+
 
         if self.transform:
             image = self.transform(text_item)
@@ -94,12 +111,12 @@ class CustomDataset(Dataset):
             #Potentially move conversion to tensors to init
             #
 
-        return torch.LongTensor(text_item), torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
+        return torch.LongTensor(text_item), torch.DoubleTensor(emo_item) ,torch.LongTensor(self.attention_masks[idx]), torch.LongTensor(self.token_type_ids[idx]), torch.LongTensor(label)
 
 
 
 
-
+#datasettypetype refers to train test val
 def load_data(input_max, dataset_type):
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     
@@ -132,6 +149,13 @@ def load_data(input_max, dataset_type):
         val_path = 'data/MELD_Dyadic_dataset/dev_sent_emo_dya.csv'
         test_path = 'data/MELD_Dyadic_dataset/test_sent_emo_dya.csv'
 
+    elif dataset_type == 'TSA':
+        vocab = Vocabulary_TSA()
+        
+        train_path = 'data/Twitter_Sen_Analysis/twitter_training.csv'
+        val_path = 'data/Twitter_Sen_Analysis/twitter_validation.csv'
+        test_path = 'data/Twitter_Sen_Analysis/twitter_validation.csv'
+
     else:
         vocab = Vocabulary_AAAI()
         train_path = 'data/constraint_dataset/English_Train.xlsx'
@@ -139,105 +163,59 @@ def load_data(input_max, dataset_type):
         test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
 
 
-    def processing_data(path):
-        
-
+    def processing_data(path, dataset_type_type):
         
         if dataset_type == 'AAAI':
             data = pd.read_excel(path)
+            text_items = data["tweet"]
+            text_labels = data["label"]
 
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["tweet"],
-                            "label": item["label"]}
-                text_dict[i].append(text_item)
+            if dataset_type_type == 'train':
+                deepMoji_inputs = torch.load("deepMoji_inputs/AAAI/AAAI_train.pt")
+            elif dataset_type_type == 'val':
+                deepMoji_inputs = torch.load("deepMoji_inputs/AAAI/AAAI_val.pt")
+            elif dataset_type_type == 'test':
+                deepMoji_inputs = torch.load("deepMoji_inputs/AAAI/AAAI_test.pt")
+
 
         elif dataset_type == 'LIAR':
             data = pd.read_csv(path, sep='\t',header=None)
+            text_items = data.iloc[:,2]
+            text_labels = data.iloc[:,1]
 
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item[2],
-                            "label": item[1]}
-                text_dict[item[0]].append(text_item)
-        
-        elif dataset_type == 'FACEBUZZ':
-            #Include actual red in specific to facebuzz
-            data = pd.read_excel(path)
+            if dataset_type_type == 'train':
+                deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_train.pt")
+            elif dataset_type_type == 'val':
+                deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_val.pt")
+            elif dataset_type_type == 'test':
+                deepMoji_inputs = torch.load("deepMoji_inputs/LIAR/LIAR_test.pt")
+
 
         elif dataset_type == 'MELD':
             data = pd.read_csv(path, encoding="utf-8")
+            text_items = data["Utterance"]
+            text_labels = data["Emotion"]
 
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["Utterance"],
-                            "label": item["Emotion"]}
-                text_dict[i].append(text_item)
-        
 
         else:
-            #Default is AAAI for now
-            data = pd.read_excel(path)
-            text_dict = defaultdict(list)
-            for i, item in data.iterrows():
-                text_item = {"text": item["Utterance"],
-                            "label": item["Emotion"]}
-                text_dict[item["id"]].append(text_item)
+            print("INVALID DATASET TYPE")
+            exit()
 
-
-
-
-        
-        #Optional data cleaning stage
-        #data['tweet'] = data['tweet'].map(lambda x: cleantext(x))
-
-        
-        #Check that data is read in ok
-        #print(data.head())
-
-
-        #Possibly rethink how this data is read
-        #Over complicated perhaps
-        '''
-
-        text_dict = defaultdict(list)
-        for i, item in data.iterrows():
-            text_item = {"text": item["tweet"],
-                        "label": item["label"]}
-            text_dict[item["id"]].append(text_item)
-        '''
-
-        '''        
-        #Sanity check print out some values
-        
-        for i in range(5):
-            first_key = list(text_dict)[i]
-            first_val = list(text_dict.values())[i]
-            print(f'Text: {first_val}' )
-
-        print('Dataset size ', len(text_dict))
-        '''
-       
-
-        #Possibly try and combine into dict
+        #Handles Bert inputes
         text_input = []
         truth_label_input = []
-
-
+        #emo_results = []
         
-        for text_item in text_dict.values():
-
-            #print(text_item)
-            #print(text_item[0]['text'])
-
-            _text_input = tokenizer.encode(text_item[0]['text'])
-
-
-
-            _truth_label_input = [vocab.label2id[text_item[0]['label']]]
-
-            text_input.append(_text_input)
+        for i, (text,label,emoji_probs) in enumerate(zip(text_items,text_labels,deepMoji_inputs)):
+            #print(emoji_probs)
+            BERT_text = tokenizer.encode(text)
+            _truth_label_input = [vocab.label2id[label]]
+            text_input.append(BERT_text)
             truth_label_input.append(_truth_label_input)
+
+            #_emo_probs = [x for x in emoji_probs]
+            #emo_results.append(_emo_probs)
+            
         
         text_input = pad_sequences(text_input, maxlen=128, dtype="long", truncating="post", padding="post")
         attention_masks = []
@@ -255,10 +233,12 @@ def load_data(input_max, dataset_type):
             token_type_ids.append(seq_token_type_id)
 
 
-        return CustomDataset(text_input, truth_label_input, token_type_ids, attention_masks)
+
+
+        return CustomDataset(text_input, deepMoji_inputs, truth_label_input, token_type_ids, attention_masks)
 
     return (
-               processing_data(train_path),
-               processing_data(val_path),
-               processing_data(test_path)
+               processing_data(train_path,'train'),
+               processing_data(val_path, 'val'),
+               processing_data(test_path, 'test')
            ), vocab

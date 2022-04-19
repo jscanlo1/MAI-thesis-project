@@ -142,8 +142,8 @@ def load_data(input_max, dataset_type):
         test_path = 'data/constraint_dataset/English_Test_With_Labels.xlsx'
 
     elif dataset_type == 'LIAR':
-        #vocab = Vocabulary_LIAR()
-        vocab = Vocabulary_LIAR_POOL()
+        vocab = Vocabulary_LIAR()
+        #vocab = Vocabulary_LIAR_POOL()
         train_path = 'data/liar_dataset/train.tsv'
         val_path = 'data/liar_dataset/valid.tsv'
         test_path = 'data/liar_dataset/test.tsv'

@@ -28,8 +28,8 @@ bert_lr = 1e-5
 weight_decay = 1e-5
 #lr = 5e-5
 #lr = 0.005    #Current BEST LIAR
-#lr = 0.001
-lr = 0.0001
+lr = 0.01
+#lr = 0.0001
 alpha = 0.95
 max_grad_norm = 1.0
 
@@ -150,18 +150,13 @@ class Trainer(object):
                 logits = truth_output.detach().cpu().numpy()
                 
 
-
-
                 pred_flat = np.argmax(logits, axis=1).flatten()
                 labels_flat = truth_label.to('cpu').cpu().numpy()
                 #labels_flat = truth_label.numpy().flatten()
 
-                correct += np.sum(pred_flat == labels_flat)
-
                 pred_flat_array.append(pred_flat)
                 labels_flat_array.append(labels_flat)
-
-                
+     
 
                 #loss_array.append(loss.item())
         labels_flat_array = np.concatenate(labels_flat_array)
@@ -178,12 +173,11 @@ class Trainer(object):
         #loss = np.mean(loss_array)
         #print('Correct: ', correct)
         test_loss /= num_batches
-        correct /= size
+
 
         #print('Size: ', size)
         #print('Correct: ', correct)
 
-        test_accuracy = (100*correct)
         #print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
         return test_loss, acc, prec, f1
@@ -199,7 +193,7 @@ class Trainer(object):
 
 if __name__ == '__main__':
 
-    dataset_type = 'LIAR'
+    dataset_type = 'AAAI'
 
     writer = SummaryWriter()
     torch.cuda.empty_cache()
@@ -229,6 +223,10 @@ if __name__ == '__main__':
     val_dataloader = DataLoader(val_set, batch_size=64, shuffle=True)
     test_dataloader = DataLoader(test_set, batch_size=64, shuffle=True)
 
+
+
+
+
     num_labels = vocab.num_labels()
     num_batches = len(train_dataloader)
 
@@ -245,7 +243,7 @@ if __name__ == '__main__':
 
     #Training
     trainer = Trainer(model,num_batches)
-    epochs = 100
+    epochs = 50
     
     for t in range(epochs):
         print(f"Epoch {t+1}\n-------------------------------")
@@ -269,10 +267,11 @@ if __name__ == '__main__':
     test_loss, test_acc, test_prec, test_F1 = trainer.eval(test_dataloader,  51)
     print("Test Loss: {:.4f}    Test Acc: {:.4f}    Dev Prec {:.4f}    Dev F1 {:.4f}".format(test_loss, test_acc, test_prec, test_F1))
 
-    #print(model.label_output_layer[1].weight)
-    #np.savetxt('Final_Layer_Weights', model.label_output_layer[1].weight.detach().cpu().numpy())
+    print(model.emo_output_layer[1].weight)
+    np.savetxt('Final_Layer_Weights', model.emo_output_layer[1].weight.detach().cpu().numpy())
 
     #Save models
+    #save_path = 'saved_models/LIAR_BERT_with_deepMoji_bootstrap.pt'
     #save_path = 'saved_models/LIAR_BERT__bootstrap.pt'
     #trainer.save(save_path)
 

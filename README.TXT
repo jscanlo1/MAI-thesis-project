@@ -1,6 +1,6 @@
+# Leveraging Emotion Detection in Fake News Detection
 
 
+### Repo for MAI Thesis Project
 
-Saved model overview:
-
-    Prelim models is simple ber classifier for 2 sequence
+This project looks at using the deepmoji, as an emotion detecition model, alongside (at the time) state of the art transformer models like BERT, to detect Fake News 
